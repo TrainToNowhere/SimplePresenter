@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: linear-gradient(160deg, #0d1117, #161b22);
+    color: #e6edf3;
+    font-family: system-ui, sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 1.5rem; text-align: center;
+  }
+  h1 { font-size: 3rem; margin: 0; }
+  .accent { color: #58a6ff; }
+  #count {
+    font-size: 5rem; font-weight: 700;
+    color: #56d364; font-variant-numeric: tabular-nums;
+  }
+  p { color: #8b949e; max-width: 36rem; }
+  .ring {
+    width: 90px; height: 90px; border-radius: 50%;
+    border: 6px solid #30363d; border-top-color: #58a6ff;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <h1>Custom <span class="accent">.html</span> Slide</h1>
+  <div class="ring"></div>
+  <div id="count">0</div>
+  <p>This slide is a standalone HTML file in an iframe — real
+     <strong>JavaScript</strong> (the counter) runs here, unlike in the Raw HTML block.</p>
+  <script>
+    let n = 0;
+    setInterval(() => { document.getElementById('count').textContent = ++n; }, 1000);
+  </script>
+</body>
+</html>
