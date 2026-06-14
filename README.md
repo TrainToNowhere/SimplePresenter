@@ -47,7 +47,7 @@ Each file in the folder is one slide, loaded in filename order (`01-…`, `02-�
 
 ## See it in action
 
-A complete, self-documenting demo deck lives in **[`demo/`](demo/)** — open that folder in the tool. It walks through every feature: all themes, layouts, column grids, colors, callouts, raw-HTML blocks, Mermaid diagrams, spacing, and an interactive `.html` slide.
+A complete, self-documenting demo deck lives in **[`demo`](demo)** — open that folder in the tool. It walks through every feature: all themes, layouts, column grids, colors, callouts, raw-HTML blocks, Mermaid diagrams, spacing, and an interactive `.html` slide.
 
 ## Syntax reference
 
