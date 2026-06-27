@@ -8,7 +8,6 @@ Warm, dark background with orange accent.
 Example text with ==Highlight==, a [link](#), and `inline code`.
 
 ::: cols-2
-<br>
 - List item one
 - List item two
 +++

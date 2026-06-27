@@ -543,7 +543,7 @@
     .cols {
         display: grid;
         gap: 16px;
-        margin: .8em 0
+        margin: .8em 0;
     }
 
     /* shortcut column layouts */
@@ -579,12 +579,22 @@
     /* row (stacked) */
     .cols.rows {
         grid-template-columns: 1fr;
-        grid-auto-rows: auto
+        grid-auto-rows: auto;
+    }
+
+    /* neutralize outer margins so flex-centering is truly centered */
+    .cols.rows > :first-child {
+        margin-top: 0
+    }
+
+    .cols.rows > :last-child {
+        margin-bottom: 0
     }
 
     .col-block {
-        padding: 20px 0 10px 20px;
-        border-radius: 10px
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.18), 0 3px 3px 0 rgba(0, 0, 0, 0.17);
     }
 
     .theme-dark .col-block, .theme-accent .col-block, .theme-midnight .col-block {
@@ -601,6 +611,15 @@
         margin-top: 0 !important
     }
 
+    /* neutralize outer margins so flex-centering is truly centered */
+    .col-block > :first-child {
+        margin-top: 0
+    }
+
+    .col-block > :last-child {
+        margin-bottom: 0
+    }
+
     /* transparent variant */
     .col-block.ghost {
         background: transparent !important;
@@ -612,7 +631,11 @@
     /* Colored block (color=) inherits its text color to paragraphs & lists
        (otherwise theme rules for p/li would override the box color) */
     .col-block[style*="color"] p,
-    .col-block[style*="color"] li {
+    .col-block[style*="color"] li,
+    .col-block[style*="color"] strong,
+    .col-block[style*="color"] h2,
+    .col-block[style*="color"] h3,
+    .col-block[style*="color"] ul li::marker {
         color: inherit
     }
 
@@ -645,17 +668,58 @@
         display: inline-block
     }
 
-    /* PROFESSIONAL – Content styles (light theme, neutral surfaces) */
-    .theme-professional .md-body h1 {
-        color: #1a2433
+    /* PROFESSIONAL – Content styles (light theme) */
+    #md-canvas.theme-professional {
+        background: radial-gradient(120% 80% at 100% 0%, rgba(32, 75, 173, .07), transparent 60%),
+        color: #3a4453;
     }
 
+    .theme-professional .md-body h1 {
+        color: #102a52;
+        font-weight: 700;
+        letter-spacing: -.025em
+    }
+
+    /* Slide title: kicker bar + refined weight + hairline underline */
     .theme-professional .md-body h2 {
-        color: var(--md-accent)
+        position: relative;
+        color: var(--md-accent);
+        font-weight: 700;
+        letter-spacing: -.015em;
+        margin-bottom: .9em
+    }
+
+    .theme-professional:not(.layout-center) .md-body h2 {
+        padding-bottom: .42em
+    }
+
+    .theme-professional:not(.layout-center) .md-body h2::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        width: 64px;
+        height: 3px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, var(--md-accent), var(--md-accent-2))
+    }
+
+    .theme-professional:not(.layout-center) .md-body h2::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 1px;
+        background: #dde6f2
     }
 
     .theme-professional .md-body h3 {
-        color: #5a6575
+        color: #5a6575;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        font-size: clamp(12px, 1.5vw, 15px);
+        font-weight: 600
     }
 
     .theme-professional .md-body p,
@@ -664,7 +728,11 @@
     }
 
     .theme-professional .md-body strong {
-        color: #1a2433
+        color: #14213a
+    }
+
+    .theme-professional .md-body ul li::marker {
+        color: #204bad
     }
 
     .theme-professional .md-body code {
@@ -698,19 +766,36 @@
         border-color: #d2deee
     }
 
+    /* Blockquote used as a compact column sub-header chip */
     .theme-professional .md-body blockquote {
-        background: #eef4fb;
-        color: #4a5565
+        background: linear-gradient(135deg, #eaf1fb, #f2f7fe);
+        border-left: 3px solid #204bad;
+        border-radius: 0 8px 8px 0;
+        color: #143271;
+        font-weight: 600;
+        padding: 8px 16px
     }
 
+    .theme-professional .md-body blockquote strong {
+        color: #143271
+    }
+
+    /* Cards: solid white, soft elevation, accent edge */
     .theme-professional .col-block {
-        background: rgba(255, 255, 255, .6);
-        border: 1px solid #dde6f2
+        background: #ffffff;
+        border: 1px solid #e2eaf5;
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(16, 42, 82, .04), 0 8px 24px -12px rgba(16, 42, 82, .18);
+        transition: transform .15s ease, box-shadow .15s ease
+    }
+
+    .theme-professional .col-block.ghost {
+        box-shadow: none
     }
 
     .theme-professional .md-body mark {
-        background: #def0ec;
-        color: #25776c
+        background: #dbe7fb;
+        color: #1f4ea8
     }
 
     /* Text with background: [x]{bg=…} gets pill padding & rounding */
@@ -1030,7 +1115,8 @@
       </defs>
       <rect x="4" y="4.5" width="24" height="16.5" rx="3.2" fill="url(#logo-grad)"/>
       <path d="M13.5 9.3 21 12.75 13.5 16.2Z" fill="#fff"/>
-      <path d="M16 21v4.4M11 26.4h10" stroke="url(#logo-grad)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 21v4.4M11 26.4h10" stroke="url(#logo-grad)" stroke-width="2.1" stroke-linecap="round"
+            stroke-linejoin="round"/>
     </svg>
     <div class="sep"></div>
     <button id="btn-open">
@@ -1045,6 +1131,13 @@
         <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
       Add Files
+    </button>
+    <button id="btn-refresh" disabled>
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+        <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3" stroke="currentColor" stroke-width="1.3"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      Refresh
     </button>
     <div class="sep"></div>
     <button id="btn-present" class="primary" disabled>
@@ -1127,12 +1220,84 @@
   const btnPrev = document.getElementById('btn-prev');
   const btnNext = document.getElementById('btn-next');
   const btnPresent = document.getElementById('btn-present');
+  const btnRefresh = document.getElementById('btn-refresh');
 
-  /* ── FILE LOADING ── */
-  document.getElementById('btn-open').onclick = () => document.getElementById('input-folder').click();
-  document.getElementById('btn-files').onclick = () => document.getElementById('input-files').click();
+  /* ── FILE LOADING ──
+     When available, the File System Access API is used so that handles can be
+     re-read later (Refresh shows on-disk edits + picks up new files). Browsers
+     without it (Firefox/Safari) fall back to the classic <input> snapshots. */
+  const FS_ACCESS = !!window.showDirectoryPicker;
+
+  // Refresh only works with FS-Access handles, so hide it where unsupported.
+  if (!FS_ACCESS) btnRefresh.style.display = 'none';
+
+  document.getElementById('btn-open').onclick = pickDirectory;
+  document.getElementById('btn-files').onclick = pickFiles;
+  document.getElementById('btn-refresh').onclick = refreshFiles;
   document.getElementById('input-folder').onchange = e => loadFiles(Array.from(e.target.files));
   document.getElementById('input-files').onchange = e => loadFiles(Array.from(e.target.files));
+
+  async function pickDirectory() {
+      if (!FS_ACCESS) return document.getElementById('input-folder').click();
+      try {
+          dirHandle = await window.showDirectoryPicker();
+      } catch (e) {
+          if (e.name === 'AbortError') return;            // user cancelled
+          return document.getElementById('input-folder').click();  // e.g. blocked on file://
+      }
+      await integrateEntries(await scanDir(dirHandle));
+      finishLoad();
+  }
+
+  async function pickFiles() {
+      if (!FS_ACCESS) return document.getElementById('input-files').click();
+      let handles;
+      try {
+          handles = await window.showOpenFilePicker({multiple: true});
+      } catch (e) {
+          if (e.name === 'AbortError') return;            // user cancelled
+          return document.getElementById('input-files').click();   // e.g. blocked on file://
+      }
+      await integrateEntries(handles.map(h => ({name: h.name, path: h.name, handle: h})));
+      finishLoad();
+  }
+
+  function finishLoad() {
+      renderStrip();
+      if (current < 0 && slides.length) showSlide(0);
+      updateUI();
+  }
+
+  // Recursively flatten a directory handle into {name, path, handle} entries.
+  async function scanDir(dh, prefix = '') {
+      const out = [];
+      for await (const entry of dh.values()) {
+          const path = prefix + entry.name;
+          if (entry.kind === 'directory') out.push(...await scanDir(entry, path + '/'));
+          else out.push({name: entry.name, path, handle: entry});
+      }
+      return out;
+  }
+
+  // Read handle entries into slides/images. With {append:true} only genuinely new
+  // files (by path) are added, so Refresh can pick up newly created files.
+  async function integrateEntries(entries, {append = false} = {}) {
+      const existing = new Set(slides.map(s => s.path));
+      for (const e of entries.filter(e => isImageExt(e.name))) {
+          if (append && imageHandles.some(ih => ih.path === e.path)) continue;
+          await readImage(await e.handle.getFile(), e.path);
+          if (!imageHandles.some(ih => ih.path === e.path)) imageHandles.push({handle: e.handle, path: e.path});
+      }
+      let supported = entries.filter(e => isSupportedExt(e.name));
+      if (append) supported = supported.filter(e => !existing.has(e.path));
+      supported.sort((a, b) => a.path.localeCompare(b.path, undefined, {numeric: true}));
+      const loaded = [];
+      for (const e of supported) {
+          const f = await e.handle.getFile();
+          loaded.push({name: e.name, path: e.path, type: fileType(e.name), content: await f.text(), handle: e.handle});
+      }
+      if (loaded.length) slides = [...slides, ...loaded];
+  }
 
   function isSupportedExt(n) {
       return /\.(html?|md|markdown)$/i.test(n)
@@ -1148,24 +1313,34 @@
 
   // image registry: various path forms -> data URL
   const imageRegistry = {};
+  // Refresh sources: <input> File snapshots (fallback) and FS-Access handles.
+  let imageFiles = [], imageHandles = [], dirHandle = null;
 
-  function loadFiles(files) {
-      const allFiles = Array.from(files);
-      const imgFiles = allFiles.filter(f => isImageExt(f.name));
-      const imgPromises = imgFiles.map(f => new Promise(res => {
+  function readImage(f, relPath) {
+      return new Promise(res => {
           const r = new FileReader();
           r.onload = e => {
               const dataUrl = e.target.result;
               imageRegistry[f.name] = dataUrl;
               imageRegistry['./' + f.name] = dataUrl;
-              if (f.webkitRelativePath) {
-                  const rel = './' + f.webkitRelativePath.split('/').slice(1).join('/');
-                  imageRegistry[rel] = dataUrl;
+              // FS-Access scan path is relative to the chosen folder (e.g. img/a.png)
+              const rel = relPath || f.webkitRelativePath;
+              if (rel) {
+                  imageRegistry['./' + rel] = dataUrl;
+                  imageRegistry['./' + rel.split('/').slice(1).join('/')] = dataUrl; // <input> strips top folder
               }
               res();
           };
+          r.onerror = () => res();
           r.readAsDataURL(f);
-      }));
+      });
+  }
+
+  function loadFiles(files) {
+      const allFiles = Array.from(files);
+      const imgFiles = allFiles.filter(f => isImageExt(f.name));
+      imageFiles = [...imageFiles, ...imgFiles];
+      const imgPromises = imgFiles.map(readImage);
 
       const supported = allFiles.filter(f => isSupportedExt(f.name));
       if (!supported.length && !imgFiles.length) return;
@@ -1179,7 +1354,8 @@
                   name: f.name,
                   path: f.webkitRelativePath || f.name,
                   type: fileType(f.name),
-                  content: e.target.result
+                  content: e.target.result,
+                  file: f
               });
               r.readAsText(f);
           }))
@@ -1190,6 +1366,35 @@
           if (current < 0 && slides.length) showSlide(0);
           updateUI();
       });
+  }
+
+  /* ── REFRESH ──
+     Re-reads loaded files from disk. With FS-Access handles this shows current
+     on-disk edits and (for a chosen folder) picks up newly added files. With the
+     <input> fallback only the snapshot is re-read, which the browser may cache —
+     so true updates need re-picking the folder there. */
+  async function refreshFiles() {
+      btnRefresh.disabled = true;
+      try {
+          // images
+          for (const f of imageFiles) await readImage(f);
+          for (const ih of imageHandles) {
+              try { await readImage(await ih.handle.getFile(), ih.path); } catch (e) { /* removed */ }
+          }
+          // slides
+          for (const s of slides) {
+              try {
+                  if (s.handle) s.content = await (await s.handle.getFile()).text();
+                  else if (s.file) s.content = await s.file.text();
+              } catch (e) { /* file removed on disk – keep last content */ }
+          }
+          // newly created files in a chosen directory
+          if (dirHandle) await integrateEntries(await scanDir(dirHandle), {append: true});
+          renderStrip();
+          if (current >= 0) showSlide(current);
+      } finally {
+          updateUI();
+      }
   }
 
   /* ── FRONTMATTER ── */
@@ -1626,6 +1831,7 @@
   function updateUI() {
       const has = slides.length > 0;
       btnPresent.disabled = !has;
+      btnRefresh.disabled = !has;
       btnPrev.disabled = current <= 0;
       btnNext.disabled = current >= slides.length - 1;
       counter.textContent = has ? `${current + 1} / ${slides.length}` : '';

@@ -8,7 +8,6 @@ Light theme for well-lit rooms.
 Example text with ==Highlight==, a [link](#), and `inline code`.
 
 ::: cols-2
-<br>
 - List item one
 - List item two
 +++
