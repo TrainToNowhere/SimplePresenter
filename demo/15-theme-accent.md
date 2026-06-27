@@ -8,7 +8,6 @@ Purple gradient background with grid — bold and modern.
 Example text with ==Highlight==, a [link](#), and `inline code`.
 
 ::: cols-2
-<br>
 - List item one
 - List item two
 +++
