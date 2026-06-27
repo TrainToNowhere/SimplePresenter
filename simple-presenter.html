@@ -1,1875 +1,1882 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-    *, *::before, *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0
-    }
-
-    :root {
-        --bg: #0f0f11;
-        --surface: #17171a;
-        --surface2: #1e1e22;
-        --border: #2a2a30;
-        --border-active: #4a4a58;
-        --accent: #7c6dfa;
-        --accent-dim: #3d3580;
-        --text: #e8e8f0;
-        --text-dim: #6e6e80;
-        --text-muted: #3e3e50;
-        --danger: #e05555;
-        --strip-h: 90px;
-    }
-
-    html, body {
-        height: 100%;
-        background: var(--bg);
-        color: var(--text);
-        font-family: 'Inter', sans-serif;
-        overflow: hidden
-    }
-
-    #app {
-        display: grid;
-        grid-template-rows: 48px 1fr var(--strip-h);
-        height: 100vh
-    }
-
-    /* TOPBAR */
-    #topbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 0 16px;
-        border-bottom: 1px solid var(--border);
-        background: var(--surface)
-    }
-
-    .logo {
-        display: block;
-        height: 22px;
-        width: auto
-    }
-
-    .sep {
-        width: 1px;
-        height: 20px;
-        background: var(--border)
-    }
-
-    #topbar button {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: none;
-        border: 1px solid var(--border);
-        color: var(--text-dim);
-        padding: 5px 11px;
-        border-radius: 5px;
-        font-size: 12px;
-        font-family: inherit;
-        cursor: pointer;
-        transition: all .15s;
-        white-space: nowrap
-    }
-
-    #topbar button:hover {
-        border-color: var(--border-active);
-        color: var(--text)
-    }
-
-    #topbar button.primary {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff
-    }
-
-    #topbar button.primary:hover {
-        background: #6a5de0;
-        border-color: #6a5de0
-    }
-
-    #topbar button:disabled {
-        opacity: .35;
-        cursor: default
-    }
-
-    .spacer {
-        flex: 1
-    }
-
-    #slide-counter {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        color: var(--text-dim)
-    }
-
-    /* STAGE */
-    #stage {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--bg);
-        overflow: hidden
-    }
-
-    /* empty state */
-    #empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        pointer-events: none
-    }
-
-    #empty-state.hidden {
-        display: none
-    }
-
-    #empty-state h2 {
-        font-size: 18px;
-        font-weight: 400;
-        color: var(--text-dim)
-    }
-
-    #empty-state p {
-        font-size: 13px;
-        color: var(--text-muted);
-        text-align: center;
-        line-height: 1.6;
-        max-width: 340px
-    }
-
-    #empty-state kbd {
-        display: inline-block;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        padding: 1px 6px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px
-    }
-
-    /* iframe for HTML slides */
-    #frame-wrap {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        display: none;
-        align-items: center;
-        justify-content: center
-    }
-
-    #frame-wrap.visible {
-        display: flex
-    }
-
-    #slide-frame {
-        border: none;
-        width: 100%;
-        height: 100%;
-        background: #fff
-    }
-
-    /* MD SLIDE CANVAS */
-    #md-wrap {
-        display: none;
-        position: absolute;
-        inset: 0;
-        align-items: center;
-        justify-content: center
-    }
-
-    #md-wrap.visible {
-        display: flex
-    }
-
-    #md-canvas {
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: clamp(32px, 5vw, 80px) clamp(40px, 8vw, 120px);
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* THEMES
-   Each theme sets background/text color AND two accent variables:
-   --md-accent  : main accent (markers, links, table headers, blockquote border)
-   --md-accent-2: second accent (gradient in H1 accent word)
-   Both can be overridden per slide via Frontmatter `accent: #ff0, #f80`. */
-    #md-canvas {
-        --md-accent: #7c6dfa;
-        --md-accent-2: #a78bfa
-    }
-
-    #md-canvas.theme-dark {
-        background: #0f0f11;
-        color: #e8e8f0
-    }
-
-    #md-canvas.theme-light {
-        background: #f8f8fa;
-        color: #1a1a22;
-        --md-accent: #6a5de0;
-        --md-accent-2: #4a3fd0
-    }
-
-    #md-canvas.theme-accent {
-        background: linear-gradient(135deg, #1a0f3a 0%, #0f0f2a 60%, #0a1628 100%);
-        color: #e8e8f0
-    }
-
-    #md-canvas.theme-midnight {
-        background: linear-gradient(160deg, #0d1117 0%, #161b22 100%);
-        color: #e6edf3
-    }
-
-    #md-canvas.theme-warm {
-        background: #1a1410;
-        color: #f0e8d8;
-        --md-accent: #f0a060;
-        --md-accent-2: #ffb070
-    }
-
-    /* PROFESSIONAL: clean, light theme for serious contexts –
-       subtle gradient, discreet blue/teal accents. */
-    #md-canvas.theme-professional {
-        background: linear-gradient(135deg, #ecf2fe, #FFF);
-        color: #3a4453;
-        --md-accent: #3b6ea5;
-        --md-accent-2: #2f9e8f
-    }
-
-    /* grid overlay for dark/accent */
-    #md-canvas.theme-dark::before,
-    #md-canvas.theme-accent::before,
-    #md-canvas.theme-midnight::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background-image: linear-gradient(rgba(124, 109, 250, .04) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 109, 250, .04) 1px, transparent 1px);
-        background-size: 48px 48px;
-    }
-
-    /* MARKDOWN CONTENT STYLES */
-    .md-body {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        max-width: 900px;
-        margin: 0 auto
-    }
-
-    /* headings */
-    .theme-dark .md-body h1, .theme-accent .md-body h1, .theme-midnight .md-body h1 {
-        color: #fff
-    }
-
-    .theme-light .md-body h1 {
-        color: #0f0f1a
-    }
-
-    .theme-warm .md-body h1 {
-        color: #fff8ee
-    }
-
-    .md-body h1 {
-        font-size: clamp(32px, 5vw, 64px);
-        font-weight: 700;
-        line-height: 1.1;
-        letter-spacing: -.03em;
-        margin-bottom: .35em
-    }
-
-    .md-body h1 .accent-word {
-        color: transparent;
-        background: linear-gradient(135deg, var(--md-accent), var(--md-accent-2));
-        -webkit-background-clip: text;
-        background-clip: text
-    }
-
-    .md-body h2 {
-        font-size: clamp(18px, 3vw, 32px);
-        font-weight: 600;
-        letter-spacing: -.02em;
-        margin-bottom: .5em;
-        margin-top: 1em
-    }
-
-    .md-body h2:first-child {
-        margin-top: 0
-    }
-
-    .md-body h3 {
-        font-size: clamp(14px, 2vw, 20px);
-        font-weight: 500;
-        margin-bottom: .4em;
-        margin-top: .8em
-    }
-
-    .theme-dark .md-body h2, .theme-accent .md-body h2, .theme-midnight .md-body h2 {
-        color: #c4beff
-    }
-
-    .theme-light .md-body h2 {
-        color: #4a3fd0
-    }
-
-    .theme-warm .md-body h2 {
-        color: #f0a060
-    }
-
-    .theme-dark .md-body h3, .theme-accent .md-body h3 {
-        color: #a0a0c0
-    }
-
-    .theme-light .md-body h3 {
-        color: #5a5a80
-    }
-
-    .md-body p {
-        font-size: clamp(13px, 1.8vw, 18px);
-        line-height: 1.7;
-        margin-bottom: .7em;
-        font-weight: 300
-    }
-
-    .theme-dark .md-body p, .theme-accent .md-body p {
-        color: #b0b0c8
-    }
-
-    .theme-light .md-body p {
-        color: #3a3a5a
-    }
-
-    .theme-midnight .md-body p {
-        color: #8b949e
-    }
-
-    .md-body strong {
-        font-weight: 600
-    }
-
-    .theme-dark .md-body strong, .theme-accent .md-body strong, .theme-midnight .md-body strong {
-        color: #e8e8f0
-    }
-
-    .theme-light .md-body strong {
-        color: #0f0f1a
-    }
-
-    /* lists */
-    .md-body ul, .md-body ol {
-        padding-left: 1.4em;
-        margin-bottom: .8em
-    }
-
-    /* nested sub-lists: tighter, no extra outer margin */
-    .md-body li ul, .md-body li ol {
-        margin-top: .15em;
-        margin-bottom: .15em
-    }
-
-    .md-body li {
-        font-size: clamp(13px, 1.8vw, 17px);
-        line-height: 1.7;
-        margin-bottom: .25em;
-        font-weight: 300
-    }
-
-    .theme-dark .md-body li, .theme-accent .md-body li {
-        color: #b0b0c8
-    }
-
-    .theme-light .md-body li {
-        color: #3a3a5a
-    }
-
-    .md-body ul li::marker {
-        color: var(--md-accent)
-    }
-
-    .md-body li strong {
-        font-weight: 600
-    }
-
-    /* inline code */
-    .md-body code {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: .82em;
-        border-radius: 4px;
-        padding: 2px 7px
-    }
-
-    .theme-dark .md-body code, .theme-accent .md-body code, .theme-midnight .md-body code {
-        background: #1e1e2e;
-        color: #a78bfa;
-        border: 1px solid #2a2a40
-    }
-
-    .theme-light .md-body code {
-        background: #ede9ff;
-        color: #5a3fd0;
-        border: 1px solid #d0c8ff
-    }
-
-    /* code blocks */
-    .md-body pre {
-        border-radius: 10px;
-        padding: 18px 20px;
-        margin: 1em 0;
-        overflow-x: auto;
-        font-size: clamp(11px, 1.4vw, 14px)
-    }
-
-    .theme-dark .md-body pre, .theme-accent .md-body pre, .theme-midnight .md-body pre {
-        background: #0a0a10;
-        border: 1px solid #2a2a40;
-        color: #c0c0e0
-    }
-
-    .theme-light .md-body pre {
-        background: #1e1e2e;
-        border: 1px solid #2a2a40;
-        color: #c0c0e0
-    }
-
-    .md-body pre code {
-        background: none;
-        border: none;
-        padding: 0;
-        color: inherit;
-        font-size: inherit
-    }
-
-    /* tables */
-    .md-body table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 1em 0;
-        font-size: clamp(12px, 1.5vw, 15px)
-    }
-
-    .md-body th {
-        font-weight: 600;
-        text-align: left;
-        padding: 10px 16px;
-        border-bottom: 2px solid
-    }
-
-    .theme-dark .md-body th, .theme-accent .md-body th, .theme-midnight .md-body th {
-        background: #1a1a28;
-        border-color: var(--md-accent);
-        color: #e8e8f0
-    }
-
-    .theme-light .md-body th {
-        background: #ede9ff;
-        border-color: var(--md-accent);
-        color: #1a1a2e
-    }
-
-    .md-body td {
-        padding: 9px 16px;
-        border-bottom: 1px solid
-    }
-
-    .theme-dark .md-body td, .theme-accent .md-body td, .theme-midnight .md-body td {
-        border-color: #2a2a38;
-        color: #b0b0c8
-    }
-
-    .theme-light .md-body td {
-        border-color: #e0dcf0;
-        color: #3a3a5a
-    }
-
-    .md-body tr:last-child td {
-        border-bottom: none
-    }
-
-    .theme-dark .md-body tbody tr:hover td, .theme-midnight .md-body tbody tr:hover td {
-        background: rgba(124, 109, 250, .06)
-    }
-
-    .theme-light .md-body tbody tr:hover td {
-        background: rgba(106, 93, 224, .05)
-    }
-
-    /* hr */
-    .md-body hr {
-        border: none;
-        border-top: 1px solid;
-        margin: 1.2em 0
-    }
-
-    .theme-dark .md-body hr, .theme-accent .md-body hr, .theme-midnight .md-body hr {
-        border-color: rgba(255, 255, 255, .22)
-    }
-
-    .theme-light .md-body hr {
-        border-color: #d8d4f0
-    }
-
-    /* blockquote */
-    .md-body blockquote {
-        border-left: 3px solid var(--md-accent);
-        padding: 10px 16px;
-        margin: 1em 0;
-        border-radius: 0 6px 6px 0
-    }
-
-    .theme-dark .md-body blockquote, .theme-accent .md-body blockquote, .theme-midnight .md-body blockquote {
-        background: rgba(124, 109, 250, .07);
-        color: #a0a0c0
-    }
-
-    .theme-light .md-body blockquote {
-        background: #f0edff;
-        color: #5a5a80
-    }
-
-    /* COLUMNS / GRID */
-    .cols {
-        display: grid;
-        gap: 16px;
-        margin: .8em 0;
-    }
-
-    /* shortcut column layouts */
-    .cols.cols-2 {
-        grid-template-columns: 1fr 1fr
-    }
-
-    .cols.cols-3 {
-        grid-template-columns: 1fr 1fr 1fr
-    }
-
-    .cols.cols-4 {
-        grid-template-columns: 1fr 1fr 1fr 1fr
-    }
-
-    /* asymmetric shortcuts */
-    .cols.cols-2-1 {
-        grid-template-columns: 2fr 1fr
-    }
-
-    .cols.cols-1-2 {
-        grid-template-columns: 1fr 2fr
-    }
-
-    .cols.cols-3-1 {
-        grid-template-columns: 3fr 1fr
-    }
-
-    .cols.cols-1-3 {
-        grid-template-columns: 1fr 3fr
-    }
-
-    /* row (stacked) */
-    .cols.rows {
-        grid-template-columns: 1fr;
-        grid-auto-rows: auto;
-    }
-
-    /* neutralize outer margins so flex-centering is truly centered */
-    .cols.rows > :first-child {
-        margin-top: 0
-    }
-
-    .cols.rows > :last-child {
-        margin-bottom: 0
-    }
-
-    .col-block {
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.18), 0 3px 3px 0 rgba(0, 0, 0, 0.17);
-    }
-
-    .theme-dark .col-block, .theme-accent .col-block, .theme-midnight .col-block {
-        background: #17171a;
-        border: 1px solid #2a2a30
-    }
-
-    .theme-light .col-block {
-        background: #f0edff;
-        border: 1px solid #d8d4f0
-    }
-
-    .col-block h3 {
-        margin-top: 0 !important
-    }
-
-    /* neutralize outer margins so flex-centering is truly centered */
-    .col-block > :first-child {
-        margin-top: 0
-    }
-
-    .col-block > :last-child {
-        margin-bottom: 0
-    }
-
-    /* transparent variant */
-    .col-block.ghost {
-        background: transparent !important;
-        border-color: transparent !important;
-        padding-left: 0;
-        padding-right: 0
-    }
-
-    /* Colored block (color=) inherits its text color to paragraphs & lists
-       (otherwise theme rules for p/li would override the box color) */
-    .col-block[style*="color"] p,
-    .col-block[style*="color"] li,
-    .col-block[style*="color"] strong,
-    .col-block[style*="color"] h2,
-    .col-block[style*="color"] h3,
-    .col-block[style*="color"] ul li::marker {
-        color: inherit
-    }
-
-    /* HIGHLIGHT / MARK */
-    .md-body mark {
-        border-radius: 3px;
-        padding: 1px 5px;
-        font-weight: 500
-    }
-
-    .theme-dark .md-body mark, .theme-accent .md-body mark {
-        background: rgba(124, 109, 250, .25);
-        color: #c4beff
-    }
-
-    .theme-light .md-body mark {
-        background: #ede9ff;
-        color: #4a3fd0
-    }
-
-    /* SPACING / TABULATOR
-       \t        → a tabulator (fixed width, repeatable: \t\t)
-       [sp=2em]  → custom horizontal space with inline width */
-    .md-body .md-tab {
-        display: inline-block;
-        width: 2.5em
-    }
-
-    .md-body .md-hsp {
-        display: inline-block
-    }
-
-    /* PROFESSIONAL – Content styles (light theme) */
-    #md-canvas.theme-professional {
-        background: radial-gradient(120% 80% at 100% 0%, rgba(32, 75, 173, .07), transparent 60%),
-        color: #3a4453;
-    }
-
-    .theme-professional .md-body h1 {
-        color: #102a52;
-        font-weight: 700;
-        letter-spacing: -.025em
-    }
-
-    /* Slide title: kicker bar + refined weight + hairline underline */
-    .theme-professional .md-body h2 {
-        position: relative;
-        color: var(--md-accent);
-        font-weight: 700;
-        letter-spacing: -.015em;
-        margin-bottom: .9em
-    }
-
-    .theme-professional:not(.layout-center) .md-body h2 {
-        padding-bottom: .42em
-    }
-
-    .theme-professional:not(.layout-center) .md-body h2::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        bottom: -1px;
-        width: 64px;
-        height: 3px;
-        border-radius: 3px;
-        background: linear-gradient(90deg, var(--md-accent), var(--md-accent-2))
-    }
-
-    .theme-professional:not(.layout-center) .md-body h2::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: 1px;
-        background: #dde6f2
-    }
-
-    .theme-professional .md-body h3 {
-        color: #5a6575;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-        font-size: clamp(12px, 1.5vw, 15px);
-        font-weight: 600
-    }
-
-    .theme-professional .md-body p,
-    .theme-professional .md-body li {
-        color: #3a4453
-    }
-
-    .theme-professional .md-body strong {
-        color: #14213a
-    }
-
-    .theme-professional .md-body ul li::marker {
-        color: #204bad
-    }
-
-    .theme-professional .md-body code {
-        background: #eef3fb;
-        color: #2f6ca5;
-        border: 1px solid #d4e2f5
-    }
-
-    .theme-professional .md-body pre {
-        background: #f4f7fc;
-        border: 1px solid #d4e2f5;
-        color: #2a3340
-    }
-
-    .theme-professional .md-body th {
-        background: #eef3fb;
-        border-color: var(--md-accent);
-        color: #1a2433
-    }
-
-    .theme-professional .md-body td {
-        border-color: #dde6f2;
-        color: #3a4453
-    }
-
-    .theme-professional .md-body tbody tr:hover td {
-        background: rgba(59, 110, 165, .06)
-    }
-
-    .theme-professional .md-body hr {
-        border-color: #d2deee
-    }
-
-    /* Blockquote used as a compact column sub-header chip */
-    .theme-professional .md-body blockquote {
-        background: linear-gradient(135deg, #eaf1fb, #f2f7fe);
-        border-left: 3px solid #204bad;
-        border-radius: 0 8px 8px 0;
-        color: #143271;
-        font-weight: 600;
-        padding: 8px 16px
-    }
-
-    .theme-professional .md-body blockquote strong {
-        color: #143271
-    }
-
-    /* Cards: solid white, soft elevation, accent edge */
-    .theme-professional .col-block {
-        background: #ffffff;
-        border: 1px solid #e2eaf5;
-        border-radius: 12px;
-        box-shadow: 0 1px 2px rgba(16, 42, 82, .04), 0 8px 24px -12px rgba(16, 42, 82, .18);
-        transition: transform .15s ease, box-shadow .15s ease
-    }
-
-    .theme-professional .col-block.ghost {
-        box-shadow: none
-    }
-
-    .theme-professional .md-body mark {
-        background: #dbe7fb;
-        color: #1f4ea8
-    }
-
-    /* Text with background: [x]{bg=…} gets pill padding & rounding */
-    .md-body .bg-chip {
-        border-radius: 4px;
-        padding: 1px 6px
-    }
-
-    /* BADGE / PILL */
-    .badge {
-        display: inline-block;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: .75em;
-        padding: 2px 9px;
-        border-radius: 20px;
-        font-weight: 500;
-        margin: 0 2px;
-        border: 1px solid transparent
-    }
-
-    .badge-purple {
-        background: rgba(124, 109, 250, .2);
-        color: #a78bfa;
-        border: 1px solid rgba(124, 109, 250, .35)
-    }
-
-    .badge-green {
-        background: rgba(34, 197, 94, .15);
-        color: #4ade80;
-        border: 1px solid rgba(34, 197, 94, .3)
-    }
-
-    .badge-red {
-        background: rgba(239, 68, 68, .15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, .3)
-    }
-
-    .badge-blue {
-        background: rgba(59, 130, 246, .15);
-        color: #60a5fa;
-        border: 1px solid rgba(59, 130, 246, .3)
-    }
-
-    /* mermaid */
-    .mermaid-wrap {
-        display: flex;
-        justify-content: center;
-        margin: 1em 0
-    }
-
-    .mermaid-wrap svg {
-        max-width: 100%;
-        height: auto
-    }
-
-    /* images */
-    .md-body img {
-        max-width: 100%;
-        border-radius: 8px;
-        display: block;
-        margin: .8em auto
-    }
-
-    /* links */
-    .md-body a {
-        color: var(--md-accent);
-        text-decoration: none
-    }
-
-    .md-body a:hover {
-        text-decoration: underline
-    }
-
-    /* CENTER layout helper */
-    #md-canvas.layout-center .md-body {
-        text-align: center
-    }
-
-    #md-canvas.layout-center .md-body ul, #md-canvas.layout-center .md-body ol {
-        text-align: left
-    }
-
-    /* FULL layout: removes the centered 900px column and uses almost the
-       entire slide area. Content is top-aligned and fills the width;
-       grids/columns within stretch to fill vertical space. */
-    #md-canvas.layout-full {
-        justify-content: flex-start;
-        padding: clamp(20px, 3vw, 48px) clamp(28px, 4vw, 64px);
-    }
-
-    #md-canvas.layout-full .md-body {
-        max-width: none;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-    }
-
-    #md-canvas.layout-full .md-body > .cols {
-        flex: 1;
-        align-content: stretch;
-    }
-
-    /* NAV BUTTONS */
-    .nav-btn {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        background: rgba(15, 15, 17, .7);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        color: var(--text-dim);
-        width: 40px;
-        height: 64px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all .15s;
-        z-index: 10;
-        font-size: 18px;
-        backdrop-filter: blur(8px)
-    }
-
-    .nav-btn:hover {
-        background: rgba(124, 109, 250, .2);
-        border-color: var(--accent);
-        color: var(--text)
-    }
-
-    .nav-btn:disabled {
-        opacity: .2;
-        cursor: default
-    }
-
-    #btn-prev {
-        left: 12px
-    }
-
-    #btn-next {
-        right: 12px
-    }
-
-    /* FILM STRIP */
-    #strip {
-        display: flex;
-        align-items: center;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        overflow-x: auto;
-        overflow-y: hidden;
-        padding: 8px 12px;
-        gap: 6px;
-        scrollbar-width: thin;
-        scrollbar-color: var(--border) transparent
-    }
-
-    #strip::-webkit-scrollbar {
-        height: 4px
-    }
-
-    #strip::-webkit-scrollbar-thumb {
-        background: var(--border);
-        border-radius: 2px
-    }
-
-    .thumb {
-        flex-shrink: 0;
-        position: relative;
-        width: 112px;
-        height: 72px;
-        border: 1.5px solid var(--border);
-        border-radius: 6px;
-        background: var(--surface2);
-        overflow: hidden;
-        cursor: pointer;
-        transition: border-color .15s;
-        display: flex;
-        flex-direction: column
-    }
-
-    .thumb:hover {
-        border-color: var(--border-active)
-    }
-
-    .thumb.active {
-        border-color: var(--accent)
-    }
-
-    .thumb.drag-over {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent-dim)
-    }
-
-    .thumb-label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 9px;
-        color: var(--text-muted);
-        padding: 3px 6px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        flex-shrink: 0;
-        border-bottom: 1px solid var(--border);
-        background: var(--surface)
-    }
-
-    .thumb.active .thumb-label {
-        color: var(--accent);
-        background: var(--accent-dim)
-    }
-
-    .thumb-preview {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 9px;
-        color: var(--text-muted);
-        padding: 2px 5px;
-        text-align: center;
-        line-height: 1.3;
-        overflow: hidden;
-        font-family: 'Inter', sans-serif
-    }
-
-    .thumb-del {
-        position: absolute;
-        top: 3px;
-        right: 3px;
-        width: 15px;
-        height: 15px;
-        border-radius: 3px;
-        background: var(--danger);
-        color: #fff;
-        border: none;
-        font-size: 10px;
-        line-height: 1;
-        cursor: pointer;
-        display: none;
-        align-items: center;
-        justify-content: center
-    }
-
-    .thumb:hover .thumb-del {
-        display: flex
-    }
-
-    .strip-empty {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        color: var(--text-muted);
-        font-style: italic;
-        pointer-events: none
-    }
-
-    /* PRESENTING MODE */
-    body.presenting #topbar, body.presenting #strip {
-        display: none
-    }
-
-    body.presenting #app {
-        grid-template-rows: 1fr
-    }
-
-    body.presenting .nav-btn {
-        opacity: 0;
-        transition: opacity .3s
-    }
-
-    body.presenting #stage:hover .nav-btn {
-        opacity: 1
-    }
-
-    body.presenting {
-        cursor: none
-    }
-
-    body.presenting #stage:hover {
-        cursor: default
-    }
-
-    .thumb[draggable="true"] {
-        cursor: grab
-    }
-
-    .thumb[draggable="true"]:active {
-        cursor: grabbing
-    }
-
-    /* SLIDE TRANSITION */
-    #md-wrap {
-        transition: opacity .2s ease
-    }
-
-    #md-wrap.fade {
-        opacity: 0
-    }
-  </style>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SimplePresenter</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0f0f11;
+            --surface: #17171a;
+            --surface2: #1e1e22;
+            --border: #2a2a30;
+            --border-active: #4a4a58;
+            --accent: #7c6dfa;
+            --accent-dim: #3d3580;
+            --text: #e8e8f0;
+            --text-dim: #6e6e80;
+            --text-muted: #3e3e50;
+            --danger: #e05555;
+            --strip-h: 90px;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden
+        }
+
+        #app {
+            display: grid;
+            grid-template-rows: 48px 1fr var(--strip-h);
+            height: 100vh
+        }
+
+        /* TOPBAR */
+        #topbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface)
+        }
+
+        .logo {
+            display: block;
+            height: 22px;
+            width: auto
+        }
+
+        .sep {
+            width: 1px;
+            height: 20px;
+            background: var(--border)
+        }
+
+        #topbar button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 5px 11px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all .15s;
+            white-space: nowrap
+        }
+
+        #topbar button:hover {
+            border-color: var(--border-active);
+            color: var(--text)
+        }
+
+        #topbar button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff
+        }
+
+        #topbar button.primary:hover {
+            background: #6a5de0;
+            border-color: #6a5de0
+        }
+
+        #topbar button:disabled {
+            opacity: .35;
+            cursor: default
+        }
+
+        .spacer {
+            flex: 1
+        }
+
+        #slide-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-dim)
+        }
+
+        /* STAGE */
+        #stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            overflow: hidden
+        }
+
+        /* empty state */
+        #empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            pointer-events: none
+        }
+
+        #empty-state.hidden {
+            display: none
+        }
+
+        #empty-state h2 {
+            font-size: 18px;
+            font-weight: 400;
+            color: var(--text-dim)
+        }
+
+        #empty-state p {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+            max-width: 340px
+        }
+
+        #empty-state kbd {
+            display: inline-block;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px
+        }
+
+        /* iframe for HTML slides */
+        #frame-wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: none;
+            align-items: center;
+            justify-content: center
+        }
+
+        #frame-wrap.visible {
+            display: flex
+        }
+
+        #slide-frame {
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: #fff
+        }
+
+        /* MD SLIDE CANVAS */
+        #md-wrap {
+            display: none;
+            position: absolute;
+            inset: 0;
+            align-items: center;
+            justify-content: center
+        }
+
+        #md-wrap.visible {
+            display: flex
+        }
+
+        #md-canvas {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: clamp(32px, 5vw, 80px) clamp(40px, 8vw, 120px);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* THEMES
+       Each theme sets background/text color AND two accent variables:
+       --md-accent  : main accent (markers, links, table headers, blockquote border)
+       --md-accent-2: second accent (gradient in H1 accent word)
+       Both can be overridden per slide via Frontmatter `accent: #ff0, #f80`. */
+        #md-canvas {
+            --md-accent: #7c6dfa;
+            --md-accent-2: #a78bfa
+        }
+
+        #md-canvas.theme-dark {
+            background: #0f0f11;
+            color: #e8e8f0
+        }
+
+        #md-canvas.theme-light {
+            background: #f8f8fa;
+            color: #1a1a22;
+            --md-accent: #6a5de0;
+            --md-accent-2: #4a3fd0
+        }
+
+        #md-canvas.theme-accent {
+            background: linear-gradient(135deg, #1a0f3a 0%, #0f0f2a 60%, #0a1628 100%);
+            color: #e8e8f0
+        }
+
+        #md-canvas.theme-midnight {
+            background: linear-gradient(160deg, #0d1117 0%, #161b22 100%);
+            color: #e6edf3
+        }
+
+        #md-canvas.theme-warm {
+            background: #1a1410;
+            color: #f0e8d8;
+            --md-accent: #f0a060;
+            --md-accent-2: #ffb070
+        }
+
+        /* PROFESSIONAL: clean, light theme for serious contexts –
+           subtle gradient, discreet blue/teal accents. */
+        #md-canvas.theme-professional {
+            background: linear-gradient(135deg, #ecf2fe, #FFF);
+            color: #3a4453;
+            --md-accent: #3b6ea5;
+            --md-accent-2: #2f9e8f
+        }
+
+        /* grid overlay for dark/accent */
+        #md-canvas.theme-dark::before,
+        #md-canvas.theme-accent::before,
+        #md-canvas.theme-midnight::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(rgba(124, 109, 250, .04) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 109, 250, .04) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+
+        /* MARKDOWN CONTENT STYLES */
+        .md-body {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto
+        }
+
+        /* headings */
+        .theme-dark .md-body h1, .theme-accent .md-body h1, .theme-midnight .md-body h1 {
+            color: #fff
+        }
+
+        .theme-light .md-body h1 {
+            color: #0f0f1a
+        }
+
+        .theme-warm .md-body h1 {
+            color: #fff8ee
+        }
+
+        .md-body h1 {
+            font-size: clamp(32px, 5vw, 64px);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -.03em;
+            margin-bottom: .35em
+        }
+
+        .md-body h1 .accent-word {
+            color: transparent;
+            background: linear-gradient(135deg, var(--md-accent), var(--md-accent-2));
+            -webkit-background-clip: text;
+            background-clip: text
+        }
+
+        .md-body h2 {
+            font-size: clamp(18px, 3vw, 32px);
+            font-weight: 600;
+            letter-spacing: -.02em;
+            margin-bottom: .5em;
+            margin-top: 1em
+        }
+
+        .md-body h2:first-child {
+            margin-top: 0
+        }
+
+        .md-body h3 {
+            font-size: clamp(14px, 2vw, 20px);
+            font-weight: 500;
+            margin-bottom: .4em;
+            margin-top: .8em
+        }
+
+        .theme-dark .md-body h2, .theme-accent .md-body h2, .theme-midnight .md-body h2 {
+            color: #c4beff
+        }
+
+        .theme-light .md-body h2 {
+            color: #4a3fd0
+        }
+
+        .theme-warm .md-body h2 {
+            color: #f0a060
+        }
+
+        .theme-dark .md-body h3, .theme-accent .md-body h3 {
+            color: #a0a0c0
+        }
+
+        .theme-light .md-body h3 {
+            color: #5a5a80
+        }
+
+        .md-body p {
+            font-size: clamp(13px, 1.8vw, 18px);
+            line-height: 1.7;
+            margin-bottom: .7em;
+            font-weight: 300
+        }
+
+        .theme-dark .md-body p, .theme-accent .md-body p {
+            color: #b0b0c8
+        }
+
+        .theme-light .md-body p {
+            color: #3a3a5a
+        }
+
+        .theme-midnight .md-body p {
+            color: #8b949e
+        }
+
+        .md-body strong {
+            font-weight: 600
+        }
+
+        .theme-dark .md-body strong, .theme-accent .md-body strong, .theme-midnight .md-body strong {
+            color: #e8e8f0
+        }
+
+        .theme-light .md-body strong {
+            color: #0f0f1a
+        }
+
+        /* lists */
+        .md-body ul, .md-body ol {
+            padding-left: 1.4em;
+            margin-bottom: .8em
+        }
+
+        /* nested sub-lists: tighter, no extra outer margin */
+        .md-body li ul, .md-body li ol {
+            margin-top: .15em;
+            margin-bottom: .15em
+        }
+
+        .md-body li {
+            font-size: clamp(13px, 1.8vw, 17px);
+            line-height: 1.7;
+            margin-bottom: .25em;
+            font-weight: 300
+        }
+
+        .theme-dark .md-body li, .theme-accent .md-body li {
+            color: #b0b0c8
+        }
+
+        .theme-light .md-body li {
+            color: #3a3a5a
+        }
+
+        .md-body ul li::marker {
+            color: var(--md-accent)
+        }
+
+        .md-body li strong {
+            font-weight: 600
+        }
+
+        /* inline code */
+        .md-body code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .82em;
+            border-radius: 4px;
+            padding: 2px 7px
+        }
+
+        .theme-dark .md-body code, .theme-accent .md-body code, .theme-midnight .md-body code {
+            background: #1e1e2e;
+            color: #a78bfa;
+            border: 1px solid #2a2a40
+        }
+
+        .theme-light .md-body code {
+            background: #ede9ff;
+            color: #5a3fd0;
+            border: 1px solid #d0c8ff
+        }
+
+        /* code blocks */
+        .md-body pre {
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin: 1em 0;
+            overflow-x: auto;
+            font-size: clamp(11px, 1.4vw, 14px)
+        }
+
+        .theme-dark .md-body pre, .theme-accent .md-body pre, .theme-midnight .md-body pre {
+            background: #0a0a10;
+            border: 1px solid #2a2a40;
+            color: #c0c0e0
+        }
+
+        .theme-light .md-body pre {
+            background: #1e1e2e;
+            border: 1px solid #2a2a40;
+            color: #c0c0e0
+        }
+
+        .md-body pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: inherit;
+            font-size: inherit
+        }
+
+        /* tables */
+        .md-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+            font-size: clamp(12px, 1.5vw, 15px)
+        }
+
+        .md-body th {
+            font-weight: 600;
+            text-align: left;
+            padding: 10px 16px;
+            border-bottom: 2px solid
+        }
+
+        .theme-dark .md-body th, .theme-accent .md-body th, .theme-midnight .md-body th {
+            background: #1a1a28;
+            border-color: var(--md-accent);
+            color: #e8e8f0
+        }
+
+        .theme-light .md-body th {
+            background: #ede9ff;
+            border-color: var(--md-accent);
+            color: #1a1a2e
+        }
+
+        .md-body td {
+            padding: 9px 16px;
+            border-bottom: 1px solid
+        }
+
+        .theme-dark .md-body td, .theme-accent .md-body td, .theme-midnight .md-body td {
+            border-color: #2a2a38;
+            color: #b0b0c8
+        }
+
+        .theme-light .md-body td {
+            border-color: #e0dcf0;
+            color: #3a3a5a
+        }
+
+        .md-body tr:last-child td {
+            border-bottom: none
+        }
+
+        .theme-dark .md-body tbody tr:hover td, .theme-midnight .md-body tbody tr:hover td {
+            background: rgba(124, 109, 250, .06)
+        }
+
+        .theme-light .md-body tbody tr:hover td {
+            background: rgba(106, 93, 224, .05)
+        }
+
+        /* hr */
+        .md-body hr {
+            border: none;
+            border-top: 1px solid;
+            margin: 1.2em 0
+        }
+
+        .theme-dark .md-body hr, .theme-accent .md-body hr, .theme-midnight .md-body hr {
+            border-color: rgba(255, 255, 255, .22)
+        }
+
+        .theme-light .md-body hr {
+            border-color: #d8d4f0
+        }
+
+        /* blockquote */
+        .md-body blockquote {
+            border-left: 3px solid var(--md-accent);
+            padding: 10px 16px;
+            margin: 1em 0;
+            border-radius: 0 6px 6px 0
+        }
+
+        .theme-dark .md-body blockquote, .theme-accent .md-body blockquote, .theme-midnight .md-body blockquote {
+            background: rgba(124, 109, 250, .07);
+            color: #a0a0c0
+        }
+
+        .theme-light .md-body blockquote {
+            background: #f0edff;
+            color: #5a5a80
+        }
+
+        /* COLUMNS / GRID */
+        .cols {
+            display: grid;
+            gap: 16px;
+            margin: .8em 0;
+        }
+
+        /* shortcut column layouts */
+        .cols.cols-2 {
+            grid-template-columns: 1fr 1fr
+        }
+
+        .cols.cols-3 {
+            grid-template-columns: 1fr 1fr 1fr
+        }
+
+        .cols.cols-4 {
+            grid-template-columns: 1fr 1fr 1fr 1fr
+        }
+
+        /* asymmetric shortcuts */
+        .cols.cols-2-1 {
+            grid-template-columns: 2fr 1fr
+        }
+
+        .cols.cols-1-2 {
+            grid-template-columns: 1fr 2fr
+        }
+
+        .cols.cols-3-1 {
+            grid-template-columns: 3fr 1fr
+        }
+
+        .cols.cols-1-3 {
+            grid-template-columns: 1fr 3fr
+        }
+
+        /* row (stacked) */
+        .cols.rows {
+            grid-template-columns: 1fr;
+            grid-auto-rows: auto;
+        }
+
+        /* neutralize outer margins so flex-centering is truly centered */
+        .cols.rows > :first-child {
+            margin-top: 0
+        }
+
+        .cols.rows > :last-child {
+            margin-bottom: 0
+        }
+
+        .col-block {
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 3px 0 rgba(0, 0, 0, 0.18), 0 3px 3px 0 rgba(0, 0, 0, 0.17);
+        }
+
+        .theme-dark .col-block, .theme-accent .col-block, .theme-midnight .col-block {
+            background: #17171a;
+            border: 1px solid #2a2a30
+        }
+
+        .theme-light .col-block {
+            background: #f0edff;
+            border: 1px solid #d8d4f0
+        }
+
+        .col-block h3 {
+            margin-top: 0 !important
+        }
+
+        /* neutralize outer margins so flex-centering is truly centered */
+        .col-block > :first-child {
+            margin-top: 0
+        }
+
+        .col-block > :last-child {
+            margin-bottom: 0
+        }
+
+        /* transparent variant */
+        .col-block.ghost {
+            background: transparent !important;
+            border-color: transparent !important;
+            padding-left: 0;
+            padding-right: 0
+        }
+
+        /* Colored block (color=) inherits its text color to paragraphs & lists
+           (otherwise theme rules for p/li would override the box color) */
+        .col-block[style*="color"] p,
+        .col-block[style*="color"] li,
+        .col-block[style*="color"] strong,
+        .col-block[style*="color"] h2,
+        .col-block[style*="color"] h3,
+        .col-block[style*="color"] ul li::marker {
+            color: inherit
+        }
+
+        /* HIGHLIGHT / MARK */
+        .md-body mark {
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-weight: 500
+        }
+
+        .theme-dark .md-body mark, .theme-accent .md-body mark {
+            background: rgba(124, 109, 250, .25);
+            color: #c4beff
+        }
+
+        .theme-light .md-body mark {
+            background: #ede9ff;
+            color: #4a3fd0
+        }
+
+        /* SPACING / TABULATOR
+           \t        → a tabulator (fixed width, repeatable: \t\t)
+           [sp=2em]  → custom horizontal space with inline width */
+        .md-body .md-tab {
+            display: inline-block;
+            width: 2.5em
+        }
+
+        .md-body .md-hsp {
+            display: inline-block
+        }
+
+        /* PROFESSIONAL – Content styles (light theme) */
+        #md-canvas.theme-professional {
+            background: radial-gradient(120% 80% at 100% 0%, rgba(32, 75, 173, .07), transparent 60%),
+            color: #3a4453;
+        }
+
+        .theme-professional .md-body h1 {
+            color: #102a52;
+            font-weight: 700;
+            letter-spacing: -.025em
+        }
+
+        /* Slide title: kicker bar + refined weight + hairline underline */
+        .theme-professional .md-body h2 {
+            position: relative;
+            color: var(--md-accent);
+            font-weight: 700;
+            letter-spacing: -.015em;
+            margin-bottom: .9em
+        }
+
+        .theme-professional:not(.layout-center) .md-body h2 {
+            padding-bottom: .42em
+        }
+
+        .theme-professional:not(.layout-center) .md-body h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 64px;
+            height: 3px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--md-accent), var(--md-accent-2))
+        }
+
+        .theme-professional:not(.layout-center) .md-body h2::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 1px;
+            background: #dde6f2
+        }
+
+        .theme-professional .md-body h3 {
+            color: #5a6575;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            font-size: clamp(12px, 1.5vw, 15px);
+            font-weight: 600
+        }
+
+        .theme-professional .md-body p,
+        .theme-professional .md-body li {
+            color: #3a4453
+        }
+
+        .theme-professional .md-body strong {
+            color: #14213a
+        }
+
+        .theme-professional .md-body ul li::marker {
+            color: #204bad
+        }
+
+        .theme-professional .md-body code {
+            background: #eef3fb;
+            color: #2f6ca5;
+            border: 1px solid #d4e2f5
+        }
+
+        .theme-professional .md-body pre {
+            background: #f4f7fc;
+            border: 1px solid #d4e2f5;
+            color: #2a3340
+        }
+
+        .theme-professional .md-body th {
+            background: #eef3fb;
+            border-color: var(--md-accent);
+            color: #1a2433
+        }
+
+        .theme-professional .md-body td {
+            border-color: #dde6f2;
+            color: #3a4453
+        }
+
+        .theme-professional .md-body tbody tr:hover td {
+            background: rgba(59, 110, 165, .06)
+        }
+
+        .theme-professional .md-body hr {
+            border-color: #d2deee
+        }
+
+        /* Blockquote used as a compact column sub-header chip */
+        .theme-professional .md-body blockquote {
+            background: linear-gradient(135deg, #eaf1fb, #f2f7fe);
+            border-left: 3px solid #204bad;
+            border-radius: 0 8px 8px 0;
+            color: #143271;
+            font-weight: 600;
+            padding: 8px 16px
+        }
+
+        .theme-professional .md-body blockquote strong {
+            color: #143271
+        }
+
+        /* Cards: solid white, soft elevation, accent edge */
+        .theme-professional .col-block {
+            background: #ffffff;
+            border: 1px solid #e2eaf5;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(16, 42, 82, .04), 0 8px 24px -12px rgba(16, 42, 82, .18);
+            transition: transform .15s ease, box-shadow .15s ease
+        }
+
+        .theme-professional .col-block.ghost {
+            box-shadow: none
+        }
+
+        .theme-professional .md-body mark {
+            background: #dbe7fb;
+            color: #1f4ea8
+        }
+
+        /* Text with background: [x]{bg=…} gets pill padding & rounding */
+        .md-body .bg-chip {
+            border-radius: 4px;
+            padding: 1px 6px
+        }
+
+        /* BADGE / PILL */
+        .badge {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .75em;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-weight: 500;
+            margin: 0 2px;
+            border: 1px solid transparent
+        }
+
+        .badge-purple {
+            background: rgba(124, 109, 250, .2);
+            color: #a78bfa;
+            border: 1px solid rgba(124, 109, 250, .35)
+        }
+
+        .badge-green {
+            background: rgba(34, 197, 94, .15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, .3)
+        }
+
+        .badge-red {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, .3)
+        }
+
+        .badge-blue {
+            background: rgba(59, 130, 246, .15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, .3)
+        }
+
+        /* mermaid */
+        .mermaid-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 1em 0
+        }
+
+        .mermaid-wrap svg {
+            max-width: 100%;
+            height: auto
+        }
+
+        /* images */
+        .md-body img {
+            max-width: 100%;
+            border-radius: 8px;
+            display: block;
+            margin: .8em auto
+        }
+
+        /* links */
+        .md-body a {
+            color: var(--md-accent);
+            text-decoration: none
+        }
+
+        .md-body a:hover {
+            text-decoration: underline
+        }
+
+        /* CENTER layout helper */
+        #md-canvas.layout-center .md-body {
+            text-align: center
+        }
+
+        #md-canvas.layout-center .md-body ul, #md-canvas.layout-center .md-body ol {
+            text-align: left
+        }
+
+        /* FULL layout: removes the centered 900px column and uses almost the
+           entire slide area. Content is top-aligned and fills the width;
+           grids/columns within stretch to fill vertical space. */
+        #md-canvas.layout-full {
+            justify-content: flex-start;
+            padding: clamp(20px, 3vw, 48px) clamp(28px, 4vw, 64px);
+        }
+
+        #md-canvas.layout-full .md-body {
+            max-width: none;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #md-canvas.layout-full .md-body > .cols {
+            flex: 1;
+            align-content: stretch;
+        }
+
+        /* NAV BUTTONS */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 15, 17, .7);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            width: 40px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s;
+            z-index: 10;
+            font-size: 18px;
+            backdrop-filter: blur(8px)
+        }
+
+        .nav-btn:hover {
+            background: rgba(124, 109, 250, .2);
+            border-color: var(--accent);
+            color: var(--text)
+        }
+
+        .nav-btn:disabled {
+            opacity: .2;
+            cursor: default
+        }
+
+        #btn-prev {
+            left: 12px
+        }
+
+        #btn-next {
+            right: 12px
+        }
+
+        /* FILM STRIP */
+        #strip {
+            display: flex;
+            align-items: center;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 8px 12px;
+            gap: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent
+        }
+
+        #strip::-webkit-scrollbar {
+            height: 4px
+        }
+
+        #strip::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px
+        }
+
+        .thumb {
+            flex-shrink: 0;
+            position: relative;
+            width: 112px;
+            height: 72px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface2);
+            overflow: hidden;
+            cursor: pointer;
+            transition: border-color .15s;
+            display: flex;
+            flex-direction: column
+        }
+
+        .thumb:hover {
+            border-color: var(--border-active)
+        }
+
+        .thumb.active {
+            border-color: var(--accent)
+        }
+
+        .thumb.drag-over {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-dim)
+        }
+
+        .thumb-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-muted);
+            padding: 3px 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface)
+        }
+
+        .thumb.active .thumb-label {
+            color: var(--accent);
+            background: var(--accent-dim)
+        }
+
+        .thumb-preview {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: var(--text-muted);
+            padding: 2px 5px;
+            text-align: center;
+            line-height: 1.3;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif
+        }
+
+        .thumb-del {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            font-size: 10px;
+            line-height: 1;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center
+        }
+
+        .thumb:hover .thumb-del {
+            display: flex
+        }
+
+        .strip-empty {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+            pointer-events: none
+        }
+
+        /* PRESENTING MODE */
+        body.presenting #topbar, body.presenting #strip {
+            display: none
+        }
+
+        body.presenting #app {
+            grid-template-rows: 1fr
+        }
+
+        body.presenting .nav-btn {
+            opacity: 0;
+            transition: opacity .3s
+        }
+
+        body.presenting #stage:hover .nav-btn {
+            opacity: 1
+        }
+
+        body.presenting {
+            cursor: none
+        }
+
+        body.presenting #stage:hover {
+            cursor: default
+        }
+
+        .thumb[draggable="true"] {
+            cursor: grab
+        }
+
+        .thumb[draggable="true"]:active {
+            cursor: grabbing
+        }
+
+        /* SLIDE TRANSITION */
+        #md-wrap {
+            transition: opacity .2s ease
+        }
+
+        #md-wrap.fade {
+            opacity: 0
+        }
+    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimplePresenter</title>
 </head>
 <body>
 <div id="app">
-  <div id="topbar">
-    <svg class="logo" viewBox="0 0 32 32" fill="none" role="img" aria-label="SimplePresenter">
-      <title>SimplePresenter</title>
-      <defs>
-        <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#8b7dff"/>
-          <stop offset="1" stop-color="#6ad7c9"/>
-        </linearGradient>
-      </defs>
-      <rect x="4" y="4.5" width="24" height="16.5" rx="3.2" fill="url(#logo-grad)"/>
-      <path d="M13.5 9.3 21 12.75 13.5 16.2Z" fill="#fff"/>
-      <path d="M16 21v4.4M11 26.4h10" stroke="url(#logo-grad)" stroke-width="2.1" stroke-linecap="round"
-            stroke-linejoin="round"/>
-    </svg>
-    <div class="sep"></div>
-    <button id="btn-open">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-        <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.379a1.5 1.5 0 0 1 1.06.44l.622.621A1.5 1.5 0 0 0 8.621 3.5H13.5A1.5 1.5 0 0 1 15 5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12V3.5Z"
-              stroke="currentColor" stroke-width="1.2" fill="none"/>
-      </svg>
-      Open Folder
-    </button>
-    <button id="btn-files">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-        <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-      Add Files
-    </button>
-    <button id="btn-refresh" disabled>
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-        <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3" stroke="currentColor" stroke-width="1.3"
-              stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>
-      Refresh
-    </button>
-    <div class="sep"></div>
-    <button id="btn-present" class="primary" disabled>
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-        <polygon points="4,2 14,8 4,14" fill="currentColor"/>
-      </svg>
-      Present
-    </button>
-    <div class="spacer"></div>
-    <span id="slide-counter"></span>
-  </div>
+    <div id="topbar">
+        <svg class="logo" viewBox="0 0 32 32" fill="none" role="img" aria-label="SimplePresenter">
+            <title>SimplePresenter</title>
+            <defs>
+                <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32"
+                                gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#8b7dff"/>
+                    <stop offset="1" stop-color="#6ad7c9"/>
+                </linearGradient>
+            </defs>
+            <rect x="4" y="4.5" width="24" height="16.5" rx="3.2" fill="url(#logo-grad)"/>
+            <path d="M13.5 9.3 21 12.75 13.5 16.2Z" fill="#fff"/>
+            <path d="M16 21v4.4M11 26.4h10" stroke="url(#logo-grad)" stroke-width="2.1"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"/>
+        </svg>
+        <div class="sep"></div>
+        <button id="btn-open">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M1 3.5A1.5 1.5 0 0 1 2.5 2h3.379a1.5 1.5 0 0 1 1.06.44l.622.621A1.5 1.5 0 0 0 8.621 3.5H13.5A1.5 1.5 0 0 1 15 5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 1 12V3.5Z"
+                      stroke="currentColor" stroke-width="1.2" fill="none"/>
+            </svg>
+            Open Folder
+        </button>
+        <button id="btn-files">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round"/>
+            </svg>
+            Add Files
+        </button>
+        <button id="btn-refresh" disabled>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2v3h-3" stroke="currentColor"
+                      stroke-width="1.3"
+                      stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+            Refresh
+        </button>
+        <div class="sep"></div>
+        <button id="btn-present" class="primary" disabled>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <polygon points="4,2 14,8 4,14" fill="currentColor"/>
+            </svg>
+            Present
+        </button>
+        <div class="spacer"></div>
+        <span id="slide-counter"></span>
+    </div>
 
-  <div id="stage">
-    <div id="empty-state">
-      <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style="opacity:.15">
-        <rect x="3" y="9" width="46" height="34" rx="3" stroke="white" stroke-width="2.5"/>
-        <path d="M3 37l11-11 8 8 10-14 14 18" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
-      </svg>
-      <h2>No slides yet</h2>
-      <p>Open a folder with <kbd>.md</kbd> or <kbd>.html</kbd> files.<br>Each file is a slide.</p>
+    <div id="stage">
+        <div id="empty-state">
+            <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style="opacity:.15">
+                <rect x="3" y="9" width="46" height="34" rx="3" stroke="white" stroke-width="2.5"/>
+                <path d="M3 37l11-11 8 8 10-14 14 18" stroke="white" stroke-width="2.5"
+                      stroke-linejoin="round"/>
+            </svg>
+            <h2>No slides yet</h2>
+            <p>Open a folder with <kbd>.md</kbd> or <kbd>.html</kbd> files.<br>Each file is a slide.
+            </p>
+        </div>
+        <div id="frame-wrap">
+            <iframe id="slide-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+        <div id="md-wrap">
+            <div id="md-canvas">
+                <div class="md-body" id="md-body"></div>
+            </div>
+        </div>
+        <button class="nav-btn" id="btn-prev" disabled>&#8249;</button>
+        <button class="nav-btn" id="btn-next" disabled>&#8250;</button>
     </div>
-    <div id="frame-wrap">
-      <iframe id="slide-frame" sandbox="allow-scripts allow-same-origin"></iframe>
-    </div>
-    <div id="md-wrap">
-      <div id="md-canvas">
-        <div class="md-body" id="md-body"></div>
-      </div>
-    </div>
-    <button class="nav-btn" id="btn-prev" disabled>&#8249;</button>
-    <button class="nav-btn" id="btn-next" disabled>&#8250;</button>
-  </div>
 
-  <div id="strip">
-    <div class="strip-empty" id="strip-hint">Your slides will appear here...</div>
-  </div>
+    <div id="strip">
+        <div class="strip-empty" id="strip-hint">Your slides will appear here...</div>
+    </div>
 </div>
 
-<input type="file" id="input-folder" webkitdirectory multiple accept=".html,.htm,.md,.markdown" style="display:none">
+<input type="file" id="input-folder" webkitdirectory multiple accept=".html,.htm,.md,.markdown"
+       style="display:none">
 <input type="file" id="input-files" multiple accept=".html,.htm,.md,.markdown" style="display:none">
 
 <!-- Mermaid -->
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <script>
-  mermaid.initialize({
-      startOnLoad: false,
-      theme: 'dark',
-      themeVariables: {
-          primaryColor: '#7c6dfa',
-          primaryTextColor: '#e8e8f0',
-          primaryBorderColor: '#4a4a58',
-          lineColor: '#6e6e80',
-          secondaryColor: '#1e1e22',
-          tertiaryColor: '#17171a',
-          background: '#0f0f11',
-          mainBkg: '#17171a',
-          nodeBorder: '#4a4a58',
-          clusterBkg: '#1e1e22',
-          titleColor: '#e8e8f0',
-          edgeLabelBackground: '#1e1e22',
-          attributeBackgroundColorEven: '#17171a',
-          attributeBackgroundColorOdd: '#1e1e22'
-      }
-  });
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'dark',
+        themeVariables: {
+            primaryColor: '#7c6dfa',
+            primaryTextColor: '#e8e8f0',
+            primaryBorderColor: '#4a4a58',
+            lineColor: '#6e6e80',
+            secondaryColor: '#1e1e22',
+            tertiaryColor: '#17171a',
+            background: '#0f0f11',
+            mainBkg: '#17171a',
+            nodeBorder: '#4a4a58',
+            clusterBkg: '#1e1e22',
+            titleColor: '#e8e8f0',
+            edgeLabelBackground: '#1e1e22',
+            attributeBackgroundColorEven: '#17171a',
+            attributeBackgroundColorOdd: '#1e1e22'
+        }
+    });
 
-  /* ── STATE ── */
-  let slides = [], current = -1, presenting = false, dragSrc = null;
+    /* ── STATE ── */
+    let slides = [], current = -1, presenting = false, dragSrc = null;
 
-  /* ── ELEMENTS ── */
-  const stage = document.getElementById('stage');
-  const emptyState = document.getElementById('empty-state');
-  const frameWrap = document.getElementById('frame-wrap');
-  const slideFrame = document.getElementById('slide-frame');
-  const mdWrap = document.getElementById('md-wrap');
-  const mdCanvas = document.getElementById('md-canvas');
-  const mdBody = document.getElementById('md-body');
-  const strip = document.getElementById('strip');
-  const stripHint = document.getElementById('strip-hint');
-  const counter = document.getElementById('slide-counter');
-  const btnPrev = document.getElementById('btn-prev');
-  const btnNext = document.getElementById('btn-next');
-  const btnPresent = document.getElementById('btn-present');
-  const btnRefresh = document.getElementById('btn-refresh');
+    /* ── ELEMENTS ── */
+    const stage = document.getElementById('stage');
+    const emptyState = document.getElementById('empty-state');
+    const frameWrap = document.getElementById('frame-wrap');
+    const slideFrame = document.getElementById('slide-frame');
+    const mdWrap = document.getElementById('md-wrap');
+    const mdCanvas = document.getElementById('md-canvas');
+    const mdBody = document.getElementById('md-body');
+    const strip = document.getElementById('strip');
+    const stripHint = document.getElementById('strip-hint');
+    const counter = document.getElementById('slide-counter');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnPresent = document.getElementById('btn-present');
+    const btnRefresh = document.getElementById('btn-refresh');
 
-  /* ── FILE LOADING ──
-     When available, the File System Access API is used so that handles can be
-     re-read later (Refresh shows on-disk edits + picks up new files). Browsers
-     without it (Firefox/Safari) fall back to the classic <input> snapshots. */
-  const FS_ACCESS = !!window.showDirectoryPicker;
+    /* ── FILE LOADING ──
+       When available, the File System Access API is used so that handles can be
+       re-read later (Refresh shows on-disk edits + picks up new files). Browsers
+       without it (Firefox/Safari) fall back to the classic <input> snapshots. */
+    const FS_ACCESS = !!window.showDirectoryPicker;
 
-  // Refresh only works with FS-Access handles, so hide it where unsupported.
-  if (!FS_ACCESS) btnRefresh.style.display = 'none';
+    // Refresh only works with FS-Access handles, so hide it where unsupported.
+    if (!FS_ACCESS) btnRefresh.style.display = 'none';
 
-  document.getElementById('btn-open').onclick = pickDirectory;
-  document.getElementById('btn-files').onclick = pickFiles;
-  document.getElementById('btn-refresh').onclick = refreshFiles;
-  document.getElementById('input-folder').onchange = e => loadFiles(Array.from(e.target.files));
-  document.getElementById('input-files').onchange = e => loadFiles(Array.from(e.target.files));
+    document.getElementById('btn-open').onclick = pickDirectory;
+    document.getElementById('btn-files').onclick = pickFiles;
+    document.getElementById('btn-refresh').onclick = refreshFiles;
+    document.getElementById('input-folder').onchange = e => loadFiles(Array.from(e.target.files));
+    document.getElementById('input-files').onchange = e => loadFiles(Array.from(e.target.files));
 
-  async function pickDirectory() {
-      if (!FS_ACCESS) return document.getElementById('input-folder').click();
-      try {
-          dirHandle = await window.showDirectoryPicker();
-      } catch (e) {
-          if (e.name === 'AbortError') return;            // user cancelled
-          return document.getElementById('input-folder').click();  // e.g. blocked on file://
-      }
-      await integrateEntries(await scanDir(dirHandle));
-      finishLoad();
-  }
+    async function pickDirectory() {
+        if (!FS_ACCESS) return document.getElementById('input-folder').click();
+        try {
+            dirHandle = await window.showDirectoryPicker();
+        } catch (e) {
+            if (e.name === 'AbortError') return;            // user cancelled
+            return document.getElementById('input-folder').click();  // e.g. blocked on file://
+        }
+        await integrateEntries(await scanDir(dirHandle));
+        finishLoad();
+    }
 
-  async function pickFiles() {
-      if (!FS_ACCESS) return document.getElementById('input-files').click();
-      let handles;
-      try {
-          handles = await window.showOpenFilePicker({multiple: true});
-      } catch (e) {
-          if (e.name === 'AbortError') return;            // user cancelled
-          return document.getElementById('input-files').click();   // e.g. blocked on file://
-      }
-      await integrateEntries(handles.map(h => ({name: h.name, path: h.name, handle: h})));
-      finishLoad();
-  }
+    async function pickFiles() {
+        if (!FS_ACCESS) return document.getElementById('input-files').click();
+        let handles;
+        try {
+            handles = await window.showOpenFilePicker({multiple: true});
+        } catch (e) {
+            if (e.name === 'AbortError') return;            // user cancelled
+            return document.getElementById('input-files').click();   // e.g. blocked on file://
+        }
+        await integrateEntries(handles.map(h => ({name: h.name, path: h.name, handle: h})));
+        finishLoad();
+    }
 
-  function finishLoad() {
-      renderStrip();
-      if (current < 0 && slides.length) showSlide(0);
-      updateUI();
-  }
+    function finishLoad() {
+        renderStrip();
+        if (current < 0 && slides.length) showSlide(0);
+        updateUI();
+    }
 
-  // Recursively flatten a directory handle into {name, path, handle} entries.
-  async function scanDir(dh, prefix = '') {
-      const out = [];
-      for await (const entry of dh.values()) {
-          const path = prefix + entry.name;
-          if (entry.kind === 'directory') out.push(...await scanDir(entry, path + '/'));
-          else out.push({name: entry.name, path, handle: entry});
-      }
-      return out;
-  }
+    // Recursively flatten a directory handle into {name, path, handle} entries.
+    async function scanDir(dh, prefix = '') {
+        const out = [];
+        for await (const entry of dh.values()) {
+            const path = prefix + entry.name;
+            if (entry.kind === 'directory') out.push(...await scanDir(entry, path + '/'));
+            else out.push({name: entry.name, path, handle: entry});
+        }
+        return out;
+    }
 
-  // Read handle entries into slides/images. With {append:true} only genuinely new
-  // files (by path) are added, so Refresh can pick up newly created files.
-  async function integrateEntries(entries, {append = false} = {}) {
-      const existing = new Set(slides.map(s => s.path));
-      for (const e of entries.filter(e => isImageExt(e.name))) {
-          if (append && imageHandles.some(ih => ih.path === e.path)) continue;
-          await readImage(await e.handle.getFile(), e.path);
-          if (!imageHandles.some(ih => ih.path === e.path)) imageHandles.push({handle: e.handle, path: e.path});
-      }
-      let supported = entries.filter(e => isSupportedExt(e.name));
-      if (append) supported = supported.filter(e => !existing.has(e.path));
-      supported.sort((a, b) => a.path.localeCompare(b.path, undefined, {numeric: true}));
-      const loaded = [];
-      for (const e of supported) {
-          const f = await e.handle.getFile();
-          loaded.push({name: e.name, path: e.path, type: fileType(e.name), content: await f.text(), handle: e.handle});
-      }
-      if (loaded.length) slides = [...slides, ...loaded];
-  }
+    // Read handle entries into slides/images. With {append:true} only genuinely new
+    // files (by path) are added, so Refresh can pick up newly created files.
+    async function integrateEntries(entries, {append = false} = {}) {
+        const existing = new Set(slides.map(s => s.path));
+        for (const e of entries.filter(e => isImageExt(e.name))) {
+            if (append && imageHandles.some(ih => ih.path === e.path)) continue;
+            await readImage(await e.handle.getFile(), e.path);
+            if (!imageHandles.some(ih => ih.path === e.path)) imageHandles.push({handle: e.handle, path: e.path});
+        }
+        let supported = entries.filter(e => isSupportedExt(e.name));
+        if (append) supported = supported.filter(e => !existing.has(e.path));
+        supported.sort((a, b) => a.path.localeCompare(b.path, undefined, {numeric: true}));
+        const loaded = [];
+        for (const e of supported) {
+            const f = await e.handle.getFile();
+            loaded.push({name: e.name, path: e.path, type: fileType(e.name), content: await f.text(), handle: e.handle});
+        }
+        if (loaded.length) slides = [...slides, ...loaded];
+    }
 
-  function isSupportedExt(n) {
-      return /\.(html?|md|markdown)$/i.test(n)
-  }
+    function isSupportedExt(n) {
+        return /\.(html?|md|markdown)$/i.test(n)
+    }
 
-  function isImageExt(n) {
-      return /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(n)
-  }
+    function isImageExt(n) {
+        return /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(n)
+    }
 
-  function fileType(n) {
-      return /\.(md|markdown)$/i.test(n) ? 'md' : 'html'
-  }
+    function fileType(n) {
+        return /\.(md|markdown)$/i.test(n) ? 'md' : 'html'
+    }
 
-  // image registry: various path forms -> data URL
-  const imageRegistry = {};
-  // Refresh sources: <input> File snapshots (fallback) and FS-Access handles.
-  let imageFiles = [], imageHandles = [], dirHandle = null;
+    // image registry: various path forms -> data URL
+    const imageRegistry = {};
+    // Refresh sources: <input> File snapshots (fallback) and FS-Access handles.
+    let imageFiles = [], imageHandles = [], dirHandle = null;
 
-  function readImage(f, relPath) {
-      return new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => {
-              const dataUrl = e.target.result;
-              imageRegistry[f.name] = dataUrl;
-              imageRegistry['./' + f.name] = dataUrl;
-              // FS-Access scan path is relative to the chosen folder (e.g. img/a.png)
-              const rel = relPath || f.webkitRelativePath;
-              if (rel) {
-                  imageRegistry['./' + rel] = dataUrl;
-                  imageRegistry['./' + rel.split('/').slice(1).join('/')] = dataUrl; // <input> strips top folder
-              }
-              res();
-          };
-          r.onerror = () => res();
-          r.readAsDataURL(f);
-      });
-  }
+    function readImage(f, relPath) {
+        return new Promise(res => {
+            const r = new FileReader();
+            r.onload = e => {
+                const dataUrl = e.target.result;
+                imageRegistry[f.name] = dataUrl;
+                imageRegistry['./' + f.name] = dataUrl;
+                // FS-Access scan path is relative to the chosen folder (e.g. img/a.png)
+                const rel = relPath || f.webkitRelativePath;
+                if (rel) {
+                    imageRegistry['./' + rel] = dataUrl;
+                    imageRegistry['./' + rel.split('/').slice(1).join('/')] = dataUrl; // <input> strips top folder
+                }
+                res();
+            };
+            r.onerror = () => res();
+            r.readAsDataURL(f);
+        });
+    }
 
-  function loadFiles(files) {
-      const allFiles = Array.from(files);
-      const imgFiles = allFiles.filter(f => isImageExt(f.name));
-      imageFiles = [...imageFiles, ...imgFiles];
-      const imgPromises = imgFiles.map(readImage);
+    function loadFiles(files) {
+        const allFiles = Array.from(files);
+        const imgFiles = allFiles.filter(f => isImageExt(f.name));
+        imageFiles = [...imageFiles, ...imgFiles];
+        const imgPromises = imgFiles.map(readImage);
 
-      const supported = allFiles.filter(f => isSupportedExt(f.name));
-      if (!supported.length && !imgFiles.length) return;
-      supported.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, undefined, {numeric: true}));
+        const supported = allFiles.filter(f => isSupportedExt(f.name));
+        if (!supported.length && !imgFiles.length) return;
+        supported.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare(b.webkitRelativePath || b.name, undefined, {numeric: true}));
 
-      Promise.all([
-          ...imgPromises,
-          ...supported.map(f => new Promise(res => {
-              const r = new FileReader();
-              r.onload = e => res({
-                  name: f.name,
-                  path: f.webkitRelativePath || f.name,
-                  type: fileType(f.name),
-                  content: e.target.result,
-                  file: f
-              });
-              r.readAsText(f);
-          }))
-      ]).then(results => {
-          const loaded = results.filter(r => r && r.name);
-          slides = [...slides, ...loaded];
-          renderStrip();
-          if (current < 0 && slides.length) showSlide(0);
-          updateUI();
-      });
-  }
+        Promise.all([
+            ...imgPromises,
+            ...supported.map(f => new Promise(res => {
+                const r = new FileReader();
+                r.onload = e => res({
+                    name: f.name,
+                    path: f.webkitRelativePath || f.name,
+                    type: fileType(f.name),
+                    content: e.target.result,
+                    file: f
+                });
+                r.readAsText(f);
+            }))
+        ]).then(results => {
+            const loaded = results.filter(r => r && r.name);
+            slides = [...slides, ...loaded];
+            renderStrip();
+            if (current < 0 && slides.length) showSlide(0);
+            updateUI();
+        });
+    }
 
-  /* ── REFRESH ──
-     Re-reads loaded files from disk. With FS-Access handles this shows current
-     on-disk edits and (for a chosen folder) picks up newly added files. With the
-     <input> fallback only the snapshot is re-read, which the browser may cache —
-     so true updates need re-picking the folder there. */
-  async function refreshFiles() {
-      btnRefresh.disabled = true;
-      try {
-          // images
-          for (const f of imageFiles) await readImage(f);
-          for (const ih of imageHandles) {
-              try { await readImage(await ih.handle.getFile(), ih.path); } catch (e) { /* removed */ }
-          }
-          // slides
-          for (const s of slides) {
-              try {
-                  if (s.handle) s.content = await (await s.handle.getFile()).text();
-                  else if (s.file) s.content = await s.file.text();
-              } catch (e) { /* file removed on disk – keep last content */ }
-          }
-          // newly created files in a chosen directory
-          if (dirHandle) await integrateEntries(await scanDir(dirHandle), {append: true});
-          renderStrip();
-          if (current >= 0) showSlide(current);
-      } finally {
-          updateUI();
-      }
-  }
+    /* ── REFRESH ──
+       Re-reads loaded files from disk. With FS-Access handles this shows current
+       on-disk edits and (for a chosen folder) picks up newly added files. With the
+       <input> fallback only the snapshot is re-read, which the browser may cache —
+       so true updates need re-picking the folder there. */
+    async function refreshFiles() {
+        btnRefresh.disabled = true;
+        try {
+            // images
+            for (const f of imageFiles) await readImage(f);
+            for (const ih of imageHandles) {
+                try { await readImage(await ih.handle.getFile(), ih.path); } catch (e) { /* removed */ }
+            }
+            // slides
+            for (const s of slides) {
+                try {
+                    if (s.handle) s.content = await (await s.handle.getFile()).text();
+                    else if (s.file) s.content = await s.file.text();
+                } catch (e) { /* file removed on disk – keep last content */ }
+            }
+            // newly created files in a chosen directory
+            if (dirHandle) await integrateEntries(await scanDir(dirHandle), {append: true});
+            renderStrip();
+            if (current >= 0) showSlide(current);
+        } finally {
+            updateUI();
+        }
+    }
 
-  /* ── FRONTMATTER ── */
-  function parseFrontmatter(raw) {
-      // Defaults for all supported frontmatter keys in one place.
-      const fm = {theme: 'dark', layout: '', bg: '', image: '', gradient: '', overlay: '', accent: ''};
-      const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-      if (!m) return {...fm, body: raw};
-      const yaml = m[1];
-      const body = m[2];
-      // Key -> Frontmatter field. Aliases (e.g., bg/background) point to the same field.
-      const keyMap = {
-          theme: 'theme',
-          layout: 'layout',
-          background: 'bg',
-          bg: 'bg',
-          image: 'image',
-          gradient: 'gradient',
-          overlay: 'overlay',
-          accent: 'accent'
-      };
-      yaml.split('\n').forEach(line => {
-          const [k, ...v] = line.split(':');
-          if (k && v.length) {
-              const field = keyMap[k.trim()];
-              if (field) fm[field] = v.join(':').trim().replace(/^["']|["']$/g, '');
-          }
-      });
-      return {...fm, body};
-  }
+    /* ── FRONTMATTER ── */
+    function parseFrontmatter(raw) {
+        // Defaults for all supported frontmatter keys in one place.
+        const fm = {theme: 'dark', layout: '', bg: '', image: '', gradient: '', overlay: '', accent: ''};
+        const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+        if (!m) return {...fm, body: raw};
+        const yaml = m[1];
+        const body = m[2];
+        // Key -> Frontmatter field. Aliases (e.g., bg/background) point to the same field.
+        const keyMap = {
+            theme: 'theme',
+            layout: 'layout',
+            background: 'bg',
+            bg: 'bg',
+            image: 'image',
+            gradient: 'gradient',
+            overlay: 'overlay',
+            accent: 'accent'
+        };
+        yaml.split('\n').forEach(line => {
+            const [k, ...v] = line.split(':');
+            if (k && v.length) {
+                const field = keyMap[k.trim()];
+                if (field) fm[field] = v.join(':').trim().replace(/^["']|["']$/g, '');
+            }
+        });
+        return {...fm, body};
+    }
 
-  /* ── SHOW SLIDE ── */
-  function showSlide(idx) {
-      if (idx < 0 || idx >= slides.length) return;
-      current = idx;
-      const s = slides[idx];
-      mdWrap.classList.add('fade');
-      setTimeout(() => {
-          if (s.type === 'html') {
-              // HTML slides fill the stage just like Markdown (iframe via CSS 100%/100%).
-              frameWrap.classList.add('visible');
-              mdWrap.classList.remove('visible');
-              slideFrame.srcdoc = s.content;
-          } else {
-              frameWrap.classList.remove('visible');
-              mdWrap.classList.add('visible');
-              const {theme, layout, bg, image, gradient, overlay, accent, body} = parseFrontmatter(s.content);
-              mdCanvas.className = 'theme-' + (theme || 'dark') + (layout ? ' layout-' + layout : '');
-              // reset styles
-              mdCanvas.style.background = '';
-              mdCanvas.style.backgroundImage = '';
-              mdCanvas.style.backgroundSize = '';
-              mdCanvas.style.backgroundPosition = '';
-              mdCanvas.style.backgroundRepeat = '';
-              // Accent color per slide: `accent: #ff0` or `accent: #ff0, #f80`
-              // sets CSS variables that control markers/links/H1 accent words, etc.
-              mdCanvas.style.removeProperty('--md-accent');
-              mdCanvas.style.removeProperty('--md-accent-2');
-              if (accent) {
-                  const [a1, a2] = accent.split(',').map(c => c.trim());
-                  mdCanvas.style.setProperty('--md-accent', a1);
-                  mdCanvas.style.setProperty('--md-accent-2', a2 || a1);
-              }
-              // remove old overlay
-              const oldOv = mdCanvas.querySelector('.slide-overlay');
-              if (oldOv) oldOv.remove();
-              if (image) {
-                  // resolve from registry (supports ./file.jpg and bare name)
-                  const dataUrl = imageRegistry[image] || imageRegistry['./' + image] || imageRegistry[image.replace('./', '')] || null;
-                  const src = dataUrl || image; // fallback to URL
-                  const ov = overlay || 'rgba(0,0,0,0.45)';
-                  mdCanvas.style.backgroundImage = `linear-gradient(${ov},${ov}),url('${src}')`;
-                  mdCanvas.style.backgroundSize = 'cover';
-                  mdCanvas.style.backgroundPosition = 'center';
-                  mdCanvas.style.backgroundRepeat = 'no-repeat';
-              } else if (gradient) {
-                  // gradient: 135deg, #1a0a2e, #0a1628  OR  #1a0a2e, #0a1628
-                  const gval = gradient.trim();
-                  const css = gval.match(/^\d/) ? `linear-gradient(${gval})` : (gval.startsWith('linear') || gval.startsWith('radial')) ? gval : `linear-gradient(135deg,${gval})`;
-                  mdCanvas.style.background = css;
-              } else if (bg) {
-                  mdCanvas.style.background = bg;
-              }
-              mdBody.innerHTML = parseMarkdown(body);
-              renderMermaid();
-          }
-          emptyState.classList.add('hidden');
-          updateStrip();
-          updateUI();
-          mdWrap.classList.remove('fade');
-      }, 120);
-  }
+    /* ── SHOW SLIDE ── */
+    function showSlide(idx) {
+        if (idx < 0 || idx >= slides.length) return;
+        current = idx;
+        const s = slides[idx];
+        mdWrap.classList.add('fade');
+        setTimeout(() => {
+            if (s.type === 'html') {
+                // HTML slides fill the stage just like Markdown (iframe via CSS 100%/100%).
+                frameWrap.classList.add('visible');
+                mdWrap.classList.remove('visible');
+                slideFrame.srcdoc = s.content;
+            } else {
+                frameWrap.classList.remove('visible');
+                mdWrap.classList.add('visible');
+                const {theme, layout, bg, image, gradient, overlay, accent, body} = parseFrontmatter(s.content);
+                mdCanvas.className = 'theme-' + (theme || 'dark') + (layout ? ' layout-' + layout : '');
+                // reset styles
+                mdCanvas.style.background = '';
+                mdCanvas.style.backgroundImage = '';
+                mdCanvas.style.backgroundSize = '';
+                mdCanvas.style.backgroundPosition = '';
+                mdCanvas.style.backgroundRepeat = '';
+                // Accent color per slide: `accent: #ff0` or `accent: #ff0, #f80`
+                // sets CSS variables that control markers/links/H1 accent words, etc.
+                mdCanvas.style.removeProperty('--md-accent');
+                mdCanvas.style.removeProperty('--md-accent-2');
+                if (accent) {
+                    const [a1, a2] = accent.split(',').map(c => c.trim());
+                    mdCanvas.style.setProperty('--md-accent', a1);
+                    mdCanvas.style.setProperty('--md-accent-2', a2 || a1);
+                }
+                // remove old overlay
+                const oldOv = mdCanvas.querySelector('.slide-overlay');
+                if (oldOv) oldOv.remove();
+                if (image) {
+                    // resolve from registry (supports ./file.jpg and bare name)
+                    const dataUrl = imageRegistry[image] || imageRegistry['./' + image] || imageRegistry[image.replace('./', '')] || null;
+                    const src = dataUrl || image; // fallback to URL
+                    const ov = overlay || 'rgba(0,0,0,0.45)';
+                    mdCanvas.style.backgroundImage = `linear-gradient(${ov},${ov}),url('${src}')`;
+                    mdCanvas.style.backgroundSize = 'cover';
+                    mdCanvas.style.backgroundPosition = 'center';
+                    mdCanvas.style.backgroundRepeat = 'no-repeat';
+                } else if (gradient) {
+                    // gradient: 135deg, #1a0a2e, #0a1628  OR  #1a0a2e, #0a1628
+                    const gval = gradient.trim();
+                    const css = gval.match(/^\d/) ? `linear-gradient(${gval})` : (gval.startsWith('linear') || gval.startsWith('radial')) ? gval : `linear-gradient(135deg,${gval})`;
+                    mdCanvas.style.background = css;
+                } else if (bg) {
+                    mdCanvas.style.background = bg;
+                }
+                mdBody.innerHTML = parseMarkdown(body);
+                renderMermaid();
+            }
+            emptyState.classList.add('hidden');
+            updateStrip();
+            updateUI();
+            mdWrap.classList.remove('fade');
+        }, 120);
+    }
 
-  async function renderMermaid() {
-      const nodes = mdBody.querySelectorAll('.mermaid-src');
-      for (const node of nodes) {
-          const code = node.textContent;
-          const wrap = document.createElement('div');
-          wrap.className = 'mermaid-wrap';
-          try {
-              const id = 'mermaid-' + Math.random().toString(36).slice(2);
-              const {svg} = await mermaid.render(id, code);
-              wrap.innerHTML = svg;
-          } catch (e) {
-              wrap.innerHTML = '<pre style="color:#f87171;font-size:12px">' + escHtml(e.message) + '</pre>';
-          }
-          node.replaceWith(wrap);
-      }
-  }
+    async function renderMermaid() {
+        const nodes = mdBody.querySelectorAll('.mermaid-src');
+        for (const node of nodes) {
+            const code = node.textContent;
+            const wrap = document.createElement('div');
+            wrap.className = 'mermaid-wrap';
+            try {
+                const id = 'mermaid-' + Math.random().toString(36).slice(2);
+                const {svg} = await mermaid.render(id, code);
+                wrap.innerHTML = svg;
+            } catch (e) {
+                wrap.innerHTML = '<pre style="color:#f87171;font-size:12px">' + escHtml(e.message) + '</pre>';
+            }
+            node.replaceWith(wrap);
+        }
+    }
 
-  /* ── MARKDOWN PARSER ──
-   Syntax reference see README.md (project root).
-   Pipeline (order matters): protect code blocks → protect raw HTML → grids →
-   inline colors → headings → bold/italic/links/images → blockquotes → tables →
-   lists → paragraphs → restore protected blocks.
-   Raw HTML block (::: html … :::) is passed through unchanged. */
-  function parseMarkdown(raw, blocks) {
-      // `blocks` collects protected code placeholders. For recursion (e.g., column
-      // content), the same array is passed through so placeholders from the
-      // outer run are resolved correctly at the end. Only the root resolves.
-      const isRoot = !blocks;
-      blocks = blocks || [];
-      // protect code blocks first
-      let md = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
-          const i = blocks.length;
-          if (lang === 'mermaid') {
-              blocks.push(`<div class="mermaid-src" style="display:none">${escHtml(code.trim())}</div>`);
-          } else {
-              blocks.push(`<pre><code class="lang-${lang || 'text'}">${escHtml(code.trim())}</code></pre>`);
-          }
-          return `\x00BLOCK${i}\x00`;
-      });
+    /* ── MARKDOWN PARSER ──
+     Syntax reference see README.md (project root).
+     Pipeline (order matters): protect code blocks → protect raw HTML → grids →
+     inline colors → headings → bold/italic/links/images → blockquotes → tables →
+     lists → paragraphs → restore protected blocks.
+     Raw HTML block (::: html … :::) is passed through unchanged. */
+    function parseMarkdown(raw, blocks) {
+        // `blocks` collects protected code placeholders. For recursion (e.g., column
+        // content), the same array is passed through so placeholders from the
+        // outer run are resolved correctly at the end. Only the root resolves.
+        const isRoot = !blocks;
+        blocks = blocks || [];
+        // protect code blocks first
+        let md = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+            const i = blocks.length;
+            if (lang === 'mermaid') {
+                blocks.push(`<div class="mermaid-src" style="display:none">${escHtml(code.trim())}</div>`);
+            } else {
+                blocks.push(`<pre><code class="lang-${lang || 'text'}">${escHtml(code.trim())}</code></pre>`);
+            }
+            return `\x00BLOCK${i}\x00`;
+        });
 
-      // protect inline code
-      md = md.replace(/`([^`]+)`/g, (_, c) => {
-          const i = blocks.length;
-          blocks.push(`<code>${escHtml(c)}</code>`);
-          return `\x00BLOCK${i}\x00`;
-      });
+        // protect inline code
+        md = md.replace(/`([^`]+)`/g, (_, c) => {
+            const i = blocks.length;
+            blocks.push(`<code>${escHtml(c)}</code>`);
+            return `\x00BLOCK${i}\x00`;
+        });
 
-      // Raw HTML block: ::: html … ::: is passed through completely unchanged
-      // (no markdown parsing, no escaping, no <p> wrapping). Must run BEFORE
-      // grid blocks, otherwise "html" would be recognized as a grid layout class.
-      // Note: <script> will not be executed via innerHTML – use .html slide for JS.
-      md = md.replace(/^:::[ \t]*html[ \t]*\n([\s\S]*?)\n:::[ \t]*$/gm, (_, html) => {
-          const i = blocks.length;
-          blocks.push(html);
-          return `\x00BLOCK${i}\x00`;
-      });
+        // Raw HTML block: ::: html … ::: is passed through completely unchanged
+        // (no markdown parsing, no escaping, no <p> wrapping). Must run BEFORE
+        // grid blocks, otherwise "html" would be recognized as a grid layout class.
+        // Note: <script> will not be executed via innerHTML – use .html slide for JS.
+        md = md.replace(/^:::[ \t]*html[ \t]*\n([\s\S]*?)\n:::[ \t]*$/gm, (_, html) => {
+            const i = blocks.length;
+            blocks.push(html);
+            return `\x00BLOCK${i}\x00`;
+        });
 
-      // grid blocks: ::: cols-name [style="..."] ... ::: with +++ as column separator.
-      // Grids are exclusively for side-by-side columns – full width is achieved
-      // by normal markdown outside the block.
-      md = md.replace(/:::[ \t]*([\w-]+)(?:[ \t]+style="([^"]*)")?\n([\s\S]*?):::/gm, (_, layout, inlineStyle, inner) => {
-          const parts = inner.split(/^\+\+\+$/m);
-          const colsHtml = parts.map(p => {
-              // Optional first line {…} styles the block (classes/colors):
-              //   {.ghost}  {bg=#1a1a2e color=#fff border=#333}
-              const modMatch = p.trimStart().match(/^\{([^}]+)\}\n?/);
-              let cls = '', style = '', content = p.trim();
-              if (modMatch) {
-                  const a = parseAttrs(modMatch[1]);
-                  cls = a.cls;
-                  style = a.style;
-                  content = p.trimStart().slice(modMatch[0].length).trim();
-              }
-              return `<div class="col-block${cls ? ' ' + cls : ''}"${style ? ` style="${style}"` : ''}>${parseMarkdown(content, blocks)}</div>`;
-          }).join('');
-          const styleAttr = inlineStyle ? ` style="${inlineStyle}"` : '';
-          return `<div class="cols ${layout}"${styleAttr}>${colsHtml}</div>`;
-      });
+        // grid blocks: ::: cols-name [style="..."] ... ::: with +++ as column separator.
+        // Grids are exclusively for side-by-side columns – full width is achieved
+        // by normal markdown outside the block.
+        md = md.replace(/:::[ \t]*([\w-]+)(?:[ \t]+style="([^"]*)")?\n([\s\S]*?):::/gm, (_, layout, inlineStyle, inner) => {
+            const parts = inner.split(/^\+\+\+$/m);
+            const colsHtml = parts.map(p => {
+                // Optional first line {…} styles the block (classes/colors):
+                //   {.ghost}  {bg=#1a1a2e color=#fff border=#333}
+                const modMatch = p.trimStart().match(/^\{([^}]+)\}\n?/);
+                let cls = '', style = '', content = p.trim();
+                if (modMatch) {
+                    const a = parseAttrs(modMatch[1]);
+                    cls = a.cls;
+                    style = a.style;
+                    content = p.trimStart().slice(modMatch[0].length).trim();
+                }
+                return `<div class="col-block${cls ? ' ' + cls : ''}"${style ? ` style="${style}"` : ''}>${parseMarkdown(content, blocks)}</div>`;
+            }).join('');
+            const styleAttr = inlineStyle ? ` style="${inlineStyle}"` : '';
+            return `<div class="cols ${layout}"${styleAttr}>${colsHtml}</div>`;
+        });
 
-      // Inline colors & markers (badges, [Text]{…}, ==Highlight==, {color: Text}).
-      md = inlineColor(md);
+        // Inline colors & markers (badges, [Text]{…}, ==Highlight==, {color: Text}).
+        md = inlineColor(md);
 
-      // headings: ^Word^ = accent word; trailing {attrs} (without ':') colors the whole heading
-      md = md.replace(/^(#{1,6}) +(.*)$/gm, (_, hashes, txt) => {
-          const lvl = hashes.length;
-          let attr = '';
-          const am = txt.match(/\s*\{([^}:]+)\}\s*$/);          // e.g. {color=#f00} or {.center}
-          if (am && /[=.#]/.test(am[1])) {
-              attr = attrsToHtml(am[1]);
-              txt = txt.slice(0, am.index);
-          }
-          txt = inlineMarks(txt).replace(/\^(.+?)\^/g, '<span class="accent-word">$1</span>');
-          return `<h${lvl}${attr}>${txt}</h${lvl}>`;
-      });
+        // headings: ^Word^ = accent word; trailing {attrs} (without ':') colors the whole heading
+        md = md.replace(/^(#{1,6}) +(.*)$/gm, (_, hashes, txt) => {
+            const lvl = hashes.length;
+            let attr = '';
+            const am = txt.match(/\s*\{([^}:]+)\}\s*$/);          // e.g. {color=#f00} or {.center}
+            if (am && /[=.#]/.test(am[1])) {
+                attr = attrsToHtml(am[1]);
+                txt = txt.slice(0, am.index);
+            }
+            txt = inlineMarks(txt).replace(/\^(.+?)\^/g, '<span class="accent-word">$1</span>');
+            return `<h${lvl}${attr}>${txt}</h${lvl}>`;
+        });
 
-      // hr
-      md = md.replace(/^-{3,}$/gm, '<hr>');
+        // hr
+        md = md.replace(/^-{3,}$/gm, '<hr>');
 
-      // bold/italic/strikethrough, images & links (common inline marks)
-      md = inlineMarks(md);
+        // bold/italic/strikethrough, images & links (common inline marks)
+        md = inlineMarks(md);
 
-      // blockquote (simple, non-callout)
-      md = md.replace(/^>\s?(.+)/gm, '<blockquote>$1</blockquote>');
+        // blockquote (simple, non-callout)
+        md = md.replace(/^>\s?(.+)/gm, '<blockquote>$1</blockquote>');
 
-      // tables
-      md = md.replace(/(\|.+\|\n)((?:\|[-: ]+\|[-: |]*\n))((?:\|.+\|\n?)*)/g, (_, head, sep, body) => {
-          const parseRow = row => row.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
-          const heads = parseRow(head).map(c => `<th>${inlineFormat(c)}</th>`).join('');
-          const rows = body.trim().split('\n').map(r => `<tr>${parseRow(r).map(c => `<td>${inlineFormat(c)}</td>`).join('')}</tr>`).join('');
-          return `<table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>`;
-      });
+        // tables
+        md = md.replace(/(\|.+\|\n)((?:\|[-: ]+\|[-: |]*\n))((?:\|.+\|\n?)*)/g, (_, head, sep, body) => {
+            const parseRow = row => row.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+            const heads = parseRow(head).map(c => `<th>${inlineFormat(c)}</th>`).join('');
+            const rows = body.trim().split('\n').map(r => `<tr>${parseRow(r).map(c => `<td>${inlineFormat(c)}</td>`).join('')}</tr>`).join('');
+            return `<table><thead><tr>${heads}</tr></thead><tbody>${rows}</tbody></table>`;
+        });
 
-      // lists: Indentation creates nested sub-lists; ul/ol per level
-      // based on the marker (-,*,+ → ul, "1." → ol). An <li> stays open as long as
-      // more deeply indented lines follow, so that the sub-list ends up INSIDE the li.
-      md = md.replace(/^(?:[ \t]*(?:[-*+]|\d+\.)[ \t]+.*(?:\n|$))+/gm, block => {
-          const rows = block.replace(/\s+$/, '').split('\n').map(l => {
-              const m = l.match(/^([ \t]*)([-*+]|\d+\.)[ \t]+(.*)$/);
-              return {indent: m[1].replace(/\t/g, '    ').length, ordered: /\d/.test(m[2]), text: inlineFormat(m[3])};
-          });
-          let out = '';
-          const stack = [];
-          rows.forEach(r => {
-              while (stack.length && r.indent < stack[stack.length - 1].indent) out += '</li></' + stack.pop().tag + '>';
-              if (stack.length && r.indent === stack[stack.length - 1].indent) {
-                  out += '</li>';
-              } else {
-                  const tag = r.ordered ? 'ol' : 'ul';
-                  stack.push({indent: r.indent, tag});
-                  out += '<' + tag + '>';
-              }
-              out += '<li>' + r.text;
-          });
-          while (stack.length) out += '</li></' + stack.pop().tag + '>';
-          return out;
-      });
+        // lists: Indentation creates nested sub-lists; ul/ol per level
+        // based on the marker (-,*,+ → ul, "1." → ol). An <li> stays open as long as
+        // more deeply indented lines follow, so that the sub-list ends up INSIDE the li.
+        md = md.replace(/^(?:[ \t]*(?:[-*+]|\d+\.)[ \t]+.*(?:\n|$))+/gm, block => {
+            const rows = block.replace(/\s+$/, '').split('\n').map(l => {
+                const m = l.match(/^([ \t]*)([-*+]|\d+\.)[ \t]+(.*)$/);
+                return {indent: m[1].replace(/\t/g, '    ').length, ordered: /\d/.test(m[2]), text: inlineFormat(m[3])};
+            });
+            let out = '';
+            const stack = [];
+            rows.forEach(r => {
+                while (stack.length && r.indent < stack[stack.length - 1].indent) out += '</li></' + stack.pop().tag + '>';
+                if (stack.length && r.indent === stack[stack.length - 1].indent) {
+                    out += '</li>';
+                } else {
+                    const tag = r.ordered ? 'ol' : 'ul';
+                    stack.push({indent: r.indent, tag});
+                    out += '<' + tag + '>';
+                }
+                out += '<li>' + r.text;
+            });
+            while (stack.length) out += '</li></' + stack.pop().tag + '>';
+            return out;
+        });
 
-      // paragraphs: consecutive text lines are combined into <p>.
-      // A line counts as a block (no <p>) if empty, starting with a block tag, or
-      // consisting ONLY of a protected placeholder (standalone code block).
-      // Inline code in the middle of text lets the paragraph keep its <p>.
-      const lines = md.split('\n');
-      const out = [];
-      let para = [];
-      const isBlock = l => {
-          const t = l.trim();
-          return t === '' || /^<(h[1-6]|ul|ol|li|pre|table|blockquote|hr|div|p)/.test(t) || /^\x00BLOCK\d+\x00$/.test(t);
-      };
-      for (const line of lines) {
-          if (isBlock(line)) {
-              if (para.length) {
-                  out.push(`<p>${para.join(' ')}</p>`);
-                  para = [];
-              }
-              if (line.trim()) out.push(line);
-          } else {
-              para.push(line);
-          }
-      }
-      if (para.length) out.push(`<p>${para.join(' ')}</p>`);
-      md = out.join('\n');
+        // paragraphs: consecutive text lines are combined into <p>.
+        // A line counts as a block (no <p>) if empty, starting with a block tag, or
+        // consisting ONLY of a protected placeholder (standalone code block).
+        // Inline code in the middle of text lets the paragraph keep its <p>.
+        const lines = md.split('\n');
+        const out = [];
+        let para = [];
+        const isBlock = l => {
+            const t = l.trim();
+            return t === '' || /^<(h[1-6]|ul|ol|li|pre|table|blockquote|hr|div|p)/.test(t) || /^\x00BLOCK\d+\x00$/.test(t);
+        };
+        for (const line of lines) {
+            if (isBlock(line)) {
+                if (para.length) {
+                    out.push(`<p>${para.join(' ')}</p>`);
+                    para = [];
+                }
+                if (line.trim()) out.push(line);
+            } else {
+                para.push(line);
+            }
+        }
+        if (para.length) out.push(`<p>${para.join(' ')}</p>`);
+        md = out.join('\n');
 
-      // Restore protected blocks only at the root (recursion shares the array).
-      if (isRoot) md = md.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[+i]);
-      return md;
-  }
+        // Restore protected blocks only at the root (recursion shares the array).
+        if (isRoot) md = md.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => blocks[+i]);
+        return md;
+    }
 
-  /* ── COLOR/ATTRIBUTE SYSTEM ──
-   parseAttrs converts an attribute string into {cls, style}. Used by
-   inline spans [Text]{…}, headings `# Title {…}` and column blocks.
-   Tokens (separated by spaces):
-     .name              → CSS class
-     #rrggbb            → text color (short form)
-     color= / c=        → text color
-     bg= / background=  → background color
-     border=            → border color
-     size=              → font size (e.g. size=24px)
-   Color values: Hex (#rgb/#rrggbb/#rrggbbaa) or single-word CSS names (tomato).
-   Values with spaces/parentheses (rgb(…)) are NOT supported – use Hex. */
-  function parseAttrs(str) {
-      const cls = [], style = [];
-      (str || '').trim().split(/\s+/).forEach(tok => {
-          if (!tok) return;
-          if (tok[0] === '.') {
-              cls.push(tok.slice(1));
-              return;
-          }
-          if (tok[0] === '#') {
-              style.push('color:' + tok);
-              return;
-          }
-          const eq = tok.indexOf('=');
-          if (eq < 1) return;
-          const k = tok.slice(0, eq), v = tok.slice(eq + 1);
-          if (!v) return;
-          if (k === 'color' || k === 'c') style.push('color:' + v);
-          else if (k === 'bg' || k === 'background') style.push('background:' + v);
-          else if (k === 'border') style.push('border-color:' + v);
-          else if (k === 'size') style.push('font-size:' + v);
-      });
-      return {cls: cls.join(' '), style: style.join(';')};
-  }
+    /* ── COLOR/ATTRIBUTE SYSTEM ──
+     parseAttrs converts an attribute string into {cls, style}. Used by
+     inline spans [Text]{…}, headings `# Title {…}` and column blocks.
+     Tokens (separated by spaces):
+       .name              → CSS class
+       #rrggbb            → text color (short form)
+       color= / c=        → text color
+       bg= / background=  → background color
+       border=            → border color
+       size=              → font size (e.g. size=24px)
+     Color values: Hex (#rgb/#rrggbb/#rrggbbaa) or single-word CSS names (tomato).
+     Values with spaces/parentheses (rgb(…)) are NOT supported – use Hex. */
+    function parseAttrs(str) {
+        const cls = [], style = [];
+        (str || '').trim().split(/\s+/).forEach(tok => {
+            if (!tok) return;
+            if (tok[0] === '.') {
+                cls.push(tok.slice(1));
+                return;
+            }
+            if (tok[0] === '#') {
+                style.push('color:' + tok);
+                return;
+            }
+            const eq = tok.indexOf('=');
+            if (eq < 1) return;
+            const k = tok.slice(0, eq), v = tok.slice(eq + 1);
+            if (!v) return;
+            if (k === 'color' || k === 'c') style.push('color:' + v);
+            else if (k === 'bg' || k === 'background') style.push('background:' + v);
+            else if (k === 'border') style.push('border-color:' + v);
+            else if (k === 'size') style.push('font-size:' + v);
+        });
+        return {cls: cls.join(' '), style: style.join(';')};
+    }
 
-  function attrsToHtml(str) {
-      const {cls, style} = parseAttrs(str);
-      return (cls ? ` class="${cls}"` : '') + (style ? ` style="${style}"` : '');
-  }
+    function attrsToHtml(str) {
+        const {cls, style} = parseAttrs(str);
+        return (cls ? ` class="${cls}"` : '') + (style ? ` style="${style}"` : '');
+    }
 
-  /* Inline colors & markers – central, so flow text, lists, tables
-   and headings understand the same syntax. Order is chosen deliberately. */
-  function inlineColor(s) {
-      return s
-          // Badge: [[Text|green]] (Preset purple/green/red/blue) or free [[Text|#0af]] / [[Text|tomato]]
-          .replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, (_, t, c) => {
-              c = c.trim();
-              if (/^(purple|green|red|blue)$/.test(c)) return `<span class="badge badge-${c}">${t}</span>`;
-              return `<span class="badge" style="color:${c};border-color:${c}">${t}</span>`;
-          })
-          // Attribute span for arbitrary colors: [Text]{color=#fff bg=#7c6dfa .class}
-          // With background (bg=), the span automatically gets pill padding (.bg-chip).
-          .replace(/\[([^\]]+)\]\{([^}]*[=.#][^}]*)\}/g, (_, t, a) => {
-              const {cls, style} = parseAttrs(a);
-              const klass = (/background:/.test(style) ? 'bg-chip' + (cls ? ' ' + cls : '') : cls);
-              return `<span${klass ? ` class="${klass}"` : ''}${style ? ` style="${style}"` : ''}>${t}</span>`;
-          })
-          // Highlight: ==Text==
-          .replace(/==(.+?)==/g, '<mark>$1</mark>')
-          // Free text color: {#0af: Text} or {tomato: Text}
-          .replace(/\{(#[0-9a-fA-F]{3,8}|[a-zA-Z]{2,}):\s*([^}]+)\}/g, '<span style="color:$1">$2</span>');
-  }
+    /* Inline colors & markers – central, so flow text, lists, tables
+     and headings understand the same syntax. Order is chosen deliberately. */
+    function inlineColor(s) {
+        return s
+            // Badge: [[Text|green]] (Preset purple/green/red/blue) or free [[Text|#0af]] / [[Text|tomato]]
+            .replace(/\[\[([^\|\]]+)\|([^\]]+)\]\]/g, (_, t, c) => {
+                c = c.trim();
+                if (/^(purple|green|red|blue)$/.test(c)) return `<span class="badge badge-${c}">${t}</span>`;
+                return `<span class="badge" style="color:${c};border-color:${c}">${t}</span>`;
+            })
+            // Attribute span for arbitrary colors: [Text]{color=#fff bg=#7c6dfa .class}
+            // With background (bg=), the span automatically gets pill padding (.bg-chip).
+            .replace(/\[([^\]]+)\]\{([^}]*[=.#][^}]*)\}/g, (_, t, a) => {
+                const {cls, style} = parseAttrs(a);
+                const klass = (/background:/.test(style) ? 'bg-chip' + (cls ? ' ' + cls : '') : cls);
+                return `<span${klass ? ` class="${klass}"` : ''}${style ? ` style="${style}"` : ''}>${t}</span>`;
+            })
+            // Highlight: ==Text==
+            .replace(/==(.+?)==/g, '<mark>$1</mark>')
+            // Free text color: {#0af: Text} or {tomato: Text}
+            .replace(/\{(#[0-9a-fA-F]{3,8}|[a-zA-Z]{2,}):\s*([^}]+)\}/g, '<span style="color:$1">$2</span>');
+    }
 
-  /* Common markdown inline marks (bold/italic/strikethrough, images, links).
-   Defined once, used by body, headings and cells/items. */
-  function inlineMarks(s) {
-      return s
-          // Spacing: \t = tabulator (repeatable), [sp=2em] = custom horizontal space
-          .replace(/\[sp=([\d.]+(?:px|em|rem|%|vw)?)\]/g, '<span class="md-hsp" style="width:$1"></span>')
-          .replace(/\\t/g, '<span class="md-tab"></span>')
-          // Preserve multiple spaces WITHIN a line (HTML normally collapses them).
-          // Lookbehind \S protects line-start indentation (list detection) – it remains untouched.
-          .replace(/(?<=\S) {2,}/g, sp => ' ' + '\u00a0'.repeat(sp.length - 1))
-          .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\*(.+?)\*/g, '<em>$1</em>')
-          .replace(/~~(.+?)~~/g, '<del>$1</del>')
-          .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')  // Images before links!
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-  }
+    /* Common markdown inline marks (bold/italic/strikethrough, images, links).
+     Defined once, used by body, headings and cells/items. */
+    function inlineMarks(s) {
+        return s
+            // Spacing: \t = tabulator (repeatable), [sp=2em] = custom horizontal space
+            .replace(/\[sp=([\d.]+(?:px|em|rem|%|vw)?)\]/g, '<span class="md-hsp" style="width:$1"></span>')
+            .replace(/\\t/g, '<span class="md-tab"></span>')
+            // Preserve multiple spaces WITHIN a line (HTML normally collapses them).
+            // Lookbehind \S protects line-start indentation (list detection) – it remains untouched.
+            .replace(/(?<=\S) {2,}/g, sp => ' ' + '\u00a0'.repeat(sp.length - 1))
+            .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/~~(.+?)~~/g, '<del>$1</del>')
+            .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')  // Images before links!
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    }
 
-  /* Inline formatting for individual cells/items (tables, lists):
-   Colors → Marks → Inline code. */
-  function inlineFormat(s) {
-      return inlineMarks(inlineColor(s)).replace(/`([^`]+)`/g, '<code>$1</code>');
-  }
+    /* Inline formatting for individual cells/items (tables, lists):
+     Colors → Marks → Inline code. */
+    function inlineFormat(s) {
+        return inlineMarks(inlineColor(s)).replace(/`([^`]+)`/g, '<code>$1</code>');
+    }
 
-  function escHtml(s) {
-      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  }
+    function escHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    }
 
-  /* ── FILMSTRIP ── */
-  function renderStrip() {
-      stripHint.style.display = slides.length ? 'none' : 'flex';
-      strip.querySelectorAll('.thumb').forEach(el => el.remove());
-      slides.forEach((s, i) => {
-          const thumb = document.createElement('div');
-          thumb.className = 'thumb' + (i === current ? ' active' : '');
-          thumb.draggable = true;
-          thumb.dataset.idx = i;
-          const label = document.createElement('div');
-          label.className = 'thumb-label';
-          label.textContent = s.name;
-          label.title = s.path;
-          const preview = document.createElement('div');
-          preview.className = 'thumb-preview';
-          if (s.type === 'md') {
-              const fm = parseFrontmatter(s.content);
-              const firstLine = fm.body.replace(/^#+ /, '').split('\n').find(l => l.trim()) || s.name;
-              preview.textContent = firstLine.substring(0, 40);
-              preview.style.fontSize = '8px';
-              preview.style.color = '#6e6e80';
-          } else {
-              preview.innerHTML = '<span style="color:#4ade80;font-size:10px">&lt;/&gt; HTML Slide</span>';
-          }
-          const del = document.createElement('button');
-          del.className = 'thumb-del';
-          del.textContent = '×';
-          del.onclick = e => {
-              e.stopPropagation();
-              removeSlide(i)
-          };
-          thumb.append(label, preview, del);
-          thumb.onclick = () => showSlide(i);
-          thumb.ondragstart = e => {
-              dragSrc = i;
-              e.dataTransfer.effectAllowed = 'move';
-              setTimeout(() => thumb.style.opacity = '.4', 0)
-          };
-          thumb.ondragend = () => {
-              thumb.style.opacity = '1'
-          };
-          thumb.ondragover = e => {
-              e.preventDefault();
-              thumb.classList.add('drag-over')
-          };
-          thumb.ondragleave = () => thumb.classList.remove('drag-over');
-          thumb.ondrop = e => {
-              e.preventDefault();
-              thumb.classList.remove('drag-over');
-              if (dragSrc === null || dragSrc === i) return;
-              const moved = slides.splice(dragSrc, 1)[0];
-              slides.splice(i, 0, moved);
-              if (current === dragSrc) current = i;
-              else if (current > dragSrc && current <= i) current--;
-              else if (current < dragSrc && current >= i) current++;
-              renderStrip();
-              updateUI();
-          };
-          strip.appendChild(thumb);
-      });
-  }
+    /* ── FILMSTRIP ── */
+    function renderStrip() {
+        stripHint.style.display = slides.length ? 'none' : 'flex';
+        strip.querySelectorAll('.thumb').forEach(el => el.remove());
+        slides.forEach((s, i) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'thumb' + (i === current ? ' active' : '');
+            thumb.draggable = true;
+            thumb.dataset.idx = i;
+            const label = document.createElement('div');
+            label.className = 'thumb-label';
+            label.textContent = s.name;
+            label.title = s.path;
+            const preview = document.createElement('div');
+            preview.className = 'thumb-preview';
+            if (s.type === 'md') {
+                const fm = parseFrontmatter(s.content);
+                const firstLine = fm.body.replace(/^#+ /, '').split('\n').find(l => l.trim()) || s.name;
+                preview.textContent = firstLine.substring(0, 40);
+                preview.style.fontSize = '8px';
+                preview.style.color = '#6e6e80';
+            } else {
+                preview.innerHTML = '<span style="color:#4ade80;font-size:10px">&lt;/&gt; HTML Slide</span>';
+            }
+            const del = document.createElement('button');
+            del.className = 'thumb-del';
+            del.textContent = '×';
+            del.onclick = e => {
+                e.stopPropagation();
+                removeSlide(i)
+            };
+            thumb.append(label, preview, del);
+            thumb.onclick = () => showSlide(i);
+            thumb.ondragstart = e => {
+                dragSrc = i;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => thumb.style.opacity = '.4', 0)
+            };
+            thumb.ondragend = () => {
+                thumb.style.opacity = '1'
+            };
+            thumb.ondragover = e => {
+                e.preventDefault();
+                thumb.classList.add('drag-over')
+            };
+            thumb.ondragleave = () => thumb.classList.remove('drag-over');
+            thumb.ondrop = e => {
+                e.preventDefault();
+                thumb.classList.remove('drag-over');
+                if (dragSrc === null || dragSrc === i) return;
+                const moved = slides.splice(dragSrc, 1)[0];
+                slides.splice(i, 0, moved);
+                if (current === dragSrc) current = i;
+                else if (current > dragSrc && current <= i) current--;
+                else if (current < dragSrc && current >= i) current++;
+                renderStrip();
+                updateUI();
+            };
+            strip.appendChild(thumb);
+        });
+    }
 
-  function updateStrip() {
-      strip.querySelectorAll('.thumb').forEach((el, i) => el.classList.toggle('active', i === current));
-      const active = strip.querySelector('.thumb.active');
-      if (active) active.scrollIntoView({behavior: 'smooth', inline: 'nearest', block: 'nearest'});
-  }
+    function updateStrip() {
+        strip.querySelectorAll('.thumb').forEach((el, i) => el.classList.toggle('active', i === current));
+        const active = strip.querySelector('.thumb.active');
+        if (active) active.scrollIntoView({behavior: 'smooth', inline: 'nearest', block: 'nearest'});
+    }
 
-  function removeSlide(idx) {
-      slides.splice(idx, 1);
-      if (!slides.length) {
-          current = -1;
-          emptyState.classList.remove('hidden');
-          frameWrap.classList.remove('visible');
-          mdWrap.classList.remove('visible');
-      } else if (current >= slides.length) current = slides.length - 1;
-      renderStrip();
-      if (slides.length) showSlide(current);
-      updateUI();
-  }
+    function removeSlide(idx) {
+        slides.splice(idx, 1);
+        if (!slides.length) {
+            current = -1;
+            emptyState.classList.remove('hidden');
+            frameWrap.classList.remove('visible');
+            mdWrap.classList.remove('visible');
+        } else if (current >= slides.length) current = slides.length - 1;
+        renderStrip();
+        if (slides.length) showSlide(current);
+        updateUI();
+    }
 
-  function updateUI() {
-      const has = slides.length > 0;
-      btnPresent.disabled = !has;
-      btnRefresh.disabled = !has;
-      btnPrev.disabled = current <= 0;
-      btnNext.disabled = current >= slides.length - 1;
-      counter.textContent = has ? `${current + 1} / ${slides.length}` : '';
-  }
+    function updateUI() {
+        const has = slides.length > 0;
+        btnPresent.disabled = !has;
+        btnRefresh.disabled = !has;
+        btnPrev.disabled = current <= 0;
+        btnNext.disabled = current >= slides.length - 1;
+        counter.textContent = has ? `${current + 1} / ${slides.length}` : '';
+    }
 
-  /* ── PRESENTING ── */
-  btnPrev.onclick = () => showSlide(current - 1);
-  btnNext.onclick = () => showSlide(current + 1);
-  btnPresent.onclick = () => {
-      presenting = true;
-      document.body.classList.add('presenting');
-      stage.requestFullscreen?.().catch(() => {
-      });
-      showSlide(current)
-  };
-  document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement && presenting) {
-          presenting = false;
-          document.body.classList.remove('presenting');
-          showSlide(current)
-      }
-  });
+    /* ── PRESENTING ── */
+    btnPrev.onclick = () => showSlide(current - 1);
+    btnNext.onclick = () => showSlide(current + 1);
+    btnPresent.onclick = () => {
+        presenting = true;
+        document.body.classList.add('presenting');
+        stage.requestFullscreen?.().catch(() => {
+        });
+        showSlide(current)
+    };
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && presenting) {
+            presenting = false;
+            document.body.classList.remove('presenting');
+            showSlide(current)
+        }
+    });
 
-  /* ── KEYBOARD ── */
-  document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
-          e.preventDefault();
-          if (current < slides.length - 1) showSlide(current + 1)
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          if (current > 0) showSlide(current - 1)
-      } else if (e.key === 'Escape' && presenting) document.exitFullscreen?.();
-      else if ((e.key === 'f' || e.key === 'F') && !presenting && slides.length) btnPresent.click();
-  });
-  window.addEventListener('resize', () => {
-      if (current >= 0) showSlide(current)
-  });
+    /* ── KEYBOARD ── */
+    document.addEventListener('keydown', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+            e.preventDefault();
+            if (current < slides.length - 1) showSlide(current + 1)
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (current > 0) showSlide(current - 1)
+        } else if (e.key === 'Escape' && presenting) document.exitFullscreen?.();
+        else if ((e.key === 'f' || e.key === 'F') && !presenting && slides.length) btnPresent.click();
+    });
+    window.addEventListener('resize', () => {
+        if (current >= 0) showSlide(current)
+    });
 </script>
 </body>
 </html>
